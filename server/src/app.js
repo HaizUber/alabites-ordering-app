@@ -1,14 +1,17 @@
+// server/src/api/app.js
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
-
-require('dotenv').config();
-
+const connectDB = require('./db');
 const middlewares = require('./middlewares');
 const api = require('./api');
 
+require('dotenv').config();
+
 const app = express();
+
+connectDB();
 
 app.use(morgan('dev'));
 app.use(helmet());
@@ -21,7 +24,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use('/api/v1', api);
+app.use('/api/v1/products', productsRoutes);
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
