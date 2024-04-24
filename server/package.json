@@ -1,4 +1,11 @@
-{
+{  
+  "scripts": {
+  "start": "node src/index.js",
+  "dev": "nodemon src/index.js",
+  "lint": "eslint --fix src",
+  "test": "jest",
+  "build": "echo hello"
+},
   "dependencies": {
     "express": "^4.19.2",
     "mongoose": "^8.3.2"
