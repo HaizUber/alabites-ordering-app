@@ -12,7 +12,8 @@ Alabites is built using modern frameworks and technologies:
   - [Wireframe](https://wireframe.cc/) - Tool for user interface design.
 
 - **Backend**:
-  - [Alabites API](https://alabites-api.vercel.app/) - Custom API developed specifically for Alabites.
+  - [Alabites API](https://alabitesapi.com/) - Custom API developed specifically for Alabites.
+  - [MongoDB](https://www.mongodb.com/) - NoSQL database used for user authentication and storing product details.
 
 ## Getting Started
 
