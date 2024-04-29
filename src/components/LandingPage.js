@@ -1,428 +1,230 @@
-import React, { useState } from "react";
-import '../styles/LandingPage.css';
+import React, { useState, useEffect } from "react";
 import Footer from '../components/footer.js';
+import '../styles/LandingPage.css';
 
 const LandingPage = () => {
-    return (
-/*
-  Heads up! 👋
+  const [products, setProducts] = useState([]);
+  const [sortBy, setSortBy] = useState("");
+  const [priceRange, setPriceRange] = useState({ minPrice: '', maxPrice: '' });
+  const [availability, setAvailability] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
-  This component comes with some `rtl` classes. Please remove them if they are not needed in your project.
-*/
-<section className="relative bg-[url(https://www.capgros.com/uploads/s1/10/48/04/1/istock-1053271298.jpeg)] bg-cover bg-center bg-no-repeat" style={{ height: '50vh' }}>
-<div className="absolute inset-0 bg-white/75 sm:bg-transparent sm:from-white/95 sm:to-white/25 ltr:sm:bg-gradient-to-r rtl:sm:bg-gradient-to-l blur" style={{ backdropFilter: 'blur(1px)' }}></div>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("https://alabites-api.vercel.app/products");
+        const data = await response.json();
+        if (data.message === "success") {
+          setProducts(data.data);
+        } else {
+          console.error("Failed to fetch products:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
 
+    fetchData();
+  }, []);
 
-  <div className="relative mx-auto max-w-screen-xl px-4 py-32 sm:px-6 lg:flex lg:h-screen lg:items-center lg:px-8"style={{ height: '50vh' }}>
-    <div className="max-w-xl text-center ltr:sm:text-left rtl:sm:text-right">
-      <h1 className="text-3xl font-extrabold sm:text-5xl">
-        Satisfy your cravings
+  useEffect(() => {
+    applyFilters();
+  }, [products, sortBy, priceRange, availability]);
 
-        <strong className="block font-extrabold text-green-800"> with Alabites. </strong>
-      </h1>
+  const applyFilters = () => {
+    let filteredProducts = [...products];
 
-      <p className="mt-4 max-w-lg sm:text-xl/relaxed">
-        Ordering your favorite R2K, Chef In Action, Graciously Food Cravings has never been faster only here on Alabites
-      </p>
+    // Filter by availability
+    if (availability === "In Stock") {
+      filteredProducts = filteredProducts.filter(product => product.availability === "In Stock");
+    } else if (availability === "Out of Stock") {
+      filteredProducts = filteredProducts.filter(product => product.availability !== "In Stock");
+    }
 
-      <div className="mt-8 flex flex-wrap gap-4 text-center">
-        <a
-          href="#"
-          className="block w-full rounded bg-green-800 px-12 py-3 text-sm font-medium text-white shadow hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto"
-        >
-          Get Started
-        </a>
+    // Filter by price range
+    filteredProducts = filteredProducts.filter(product => {
+      const minPrice = parseInt(priceRange.minPrice);
+      const maxPrice = parseInt(priceRange.maxPrice);
+      return (!minPrice || product.price >= minPrice) && (!maxPrice || product.price <= maxPrice);
+    });
 
-        <a
-          href="#"
-          className="block w-full rounded bg-white px-12 py-3 text-sm font-medium text-green-800 shadow hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto"
-        >
-          Learn More
-        </a>
-      </div>
-    </div>
-  </div>
+    // Sort
+    if (sortBy === "name, ASC") {
+      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === "name, DESC") {
+      filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortBy === "price, ASC") {
+      filteredProducts.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price, DESC") {
+      filteredProducts.sort((a, b) => b.price - a.price);
+    }
 
-  <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-    <header>
-      <h2 className="text-xl font-bold text-gray-900 sm:text-3xl">Product Collection</h2>
+    setFilteredProducts(filteredProducts);
+  };
 
-      <p className="mt-4 max-w-md text-gray-500">
-        Lorem ipsum, dolor sit amet consectetur adipisicing elit. Itaque praesentium cumque iure
-        dicta incidunt est ipsam, officia dolor fugit natus?
-      </p>
-    </header>
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value);
+  };
 
-    <div className="mt-8 block lg:hidden">
-      <button
-        className="flex cursor-pointer items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600"
-      >
-        <span className="text-sm font-medium"> Filters & Sorting </span>
+  const handlePriceRangeChange = (event) => {
+    setPriceRange({ ...priceRange, [event.target.name]: event.target.value });
+  };
 
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="size-4 rtl:rotate-180"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-    </div>
+  const handleAvailabilityChange = (event) => {
+    setAvailability(event.target.value);
+  };
 
-    <div className="mt-4 lg:mt-8 lg:grid lg:grid-cols-4 lg:items-start lg:gap-8">
-      <div className="hidden space-y-4 lg:block">
-        <div>
-          <label htmlFor="SortBy" className="block text-xs font-medium text-gray-700"> Sort By </label>
+  return (
+    <section className="relative bg-[url(https://www.capgros.com/uploads/s1/10/48/04/1/istock-1053271298.jpeg)] bg-cover bg-center bg-no-repeat" style={{ height: '50vh' }}>
+      {/* Background overlay */}
+      <div className="absolute inset-0 bg-white/75 sm:bg-transparent sm:from-white/95 sm:to-white/25 ltr:sm:bg-gradient-to-r rtl:sm:bg-gradient-to-l blur" style={{ backdropFilter: 'blur(1px)' }}></div>
 
-          <select id="SortBy" className="mt-1 rounded border-gray-300 text-sm">
-            <option>Sort By</option>
-            <option value="Title, DESC">Title, DESC</option>
-            <option value="Title, ASC">Title, ASC</option>
-            <option value="Price, DESC">Price, DESC</option>
-            <option value="Price, ASC">Price, ASC</option>
-          </select>
-        </div>
+      {/* Hero section */}
+      <div className="relative mx-auto max-w-screen-xl px-4 py-32 sm:px-6 lg:flex lg:h-screen lg:items-center lg:px-8" style={{ height: '50vh' }}>
+        <div className="max-w-xl text-center ltr:sm:text-left rtl:sm:text-right">
+          <h1 className="text-3xl font-extrabold sm:text-5xl">
+            Satisfy your cravings
+            <strong className="block font-extrabold text-green-800"> with Alabites. </strong>
+          </h1>
 
-        <div>
-          <p className="block text-xs font-medium text-gray-700">Filters</p>
+          <p className="mt-4 max-w-lg sm:text-xl/relaxed">
+            Ordering your favorite R2K, Chef In Action, Graciously Food Cravings has never been faster only here on Alabites
+          </p>
 
-          <div className="mt-1 space-y-2">
-            <details
-              className="overflow-hidden rounded border border-gray-300 [&_summary::-webkit-details-marker]:hidden"
+          <div className="mt-8 flex flex-wrap gap-4 text-center">
+            <a
+              href="#"
+              className="block w-full rounded bg-green-800 px-12 py-3 text-sm font-medium text-white shadow hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto"
             >
-              <summary
-                className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition"
-              >
-                <span className="text-sm font-medium"> Availability </span>
+              Get Started
+            </a>
 
-                <span className="transition group-open:-rotate-180">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                    />
-                  </svg>
-                </span>
-              </summary>
-
-              <div className="border-t border-gray-200 bg-white">
-                <header className="flex items-center justify-between p-4">
-                  <span className="text-sm text-gray-700"> 0 Selected </span>
-
-                  <button type="button" className="text-sm text-gray-900 underline underline-offset-4">
-                    Reset
-                  </button>
-                </header>
-
-                <ul className="space-y-1 border-t border-gray-200 p-4">
-                  <li>
-                    <label htmlFor="FilterInStock" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterInStock"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> In Stock (5+) </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterPreOrder" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterPreOrder"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Pre Order (3+) </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterOutOfStock" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterOutOfStock"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Out of Stock (10+) </span>
-                    </label>
-                  </li>
-                </ul>
-              </div>
-            </details>
-
-            <details
-              className="overflow-hidden rounded border border-gray-300 [&_summary::-webkit-details-marker]:hidden"
+            <a
+              href="#"
+              className="block w-full rounded bg-white px-12 py-3 text-sm font-medium text-green-800 shadow hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto"
             >
-              <summary
-                className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition"
-              >
-                <span className="text-sm font-medium"> Price </span>
-
-                <span className="transition group-open:-rotate-180">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                    />
-                  </svg>
-                </span>
-              </summary>
-
-              <div className="border-t border-gray-200 bg-white">
-                <header className="flex items-center justify-between p-4">
-                  <span className="text-sm text-gray-700"> The highest price is $600 </span>
-
-                  <button type="button" className="text-sm text-gray-900 underline underline-offset-4">
-                    Reset
-                  </button>
-                </header>
-
-                <div className="border-t border-gray-200 p-4">
-                  <div className="flex justify-between gap-4">
-                    <label htmlFor="FilterPriceFrom" className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">$</span>
-
-                      <input
-                        type="number"
-                        id="FilterPriceFrom"
-                        placeholder="From"
-                        className="w-full rounded-md border-gray-200 shadow-sm sm:text-sm"
-                      />
-                    </label>
-
-                    <label htmlFor="FilterPriceTo" className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">$</span>
-
-                      <input
-                        type="number"
-                        id="FilterPriceTo"
-                        placeholder="To"
-                        className="w-full rounded-md border-gray-200 shadow-sm sm:text-sm"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            <details
-              className="overflow-hidden rounded border border-gray-300 [&_summary::-webkit-details-marker]:hidden"
-            >
-              <summary
-                className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition"
-              >
-                <span className="text-sm font-medium"> Colors </span>
-
-                <span className="transition group-open:-rotate-180">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                    />
-                  </svg>
-                </span>
-              </summary>
-
-              <div className="border-t border-gray-200 bg-white">
-                <header className="flex items-center justify-between p-4">
-                  <span className="text-sm text-gray-700"> 0 Selected </span>
-
-                  <button type="button" className="text-sm text-gray-900 underline underline-offset-4">
-                    Reset
-                  </button>
-                </header>
-
-                <ul className="space-y-1 border-t border-gray-200 p-4">
-                  <li>
-                    <label htmlFor="FilterRed" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterRed"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Red </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterBlue" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterBlue"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Blue </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterGreen" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterGreen"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Green </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterOrange" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterOrange"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Orange </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterPurple" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterPurple"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Purple </span>
-                    </label>
-                  </li>
-
-                  <li>
-                    <label htmlFor="FilterTeal" className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="FilterTeal"
-                        className="size-5 rounded border-gray-300"
-                      />
-
-                      <span className="text-sm font-medium text-gray-700"> Teal </span>
-                    </label>
-                  </li>
-                </ul>
-              </div>
-            </details>
+              Learn More
+            </a>
           </div>
         </div>
       </div>
 
-      <div className="lg:col-span-3">
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <li>
-            <a href="#" className="group block overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
-                alt=""
-                className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]"
+      {/* Product Collection */}
+      <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        <header>
+          <h2 className="text-xl font-bold text-gray-900 sm:text-3xl">Breakfast</h2>
+          <p className="mt-4 max-w-md text-gray-500">
+            Nothing Beats a great start of the day, go grab something to eat to boost your energy for the day!
+          </p>
+        </header>
+
+        {/* Filters & Sorting */}
+        <div className="mt-8 block lg:hidden">
+          <button
+            className="flex cursor-pointer items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600"
+          >
+            <span className="text-sm font-medium"> Filters & Sorting </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="size-4 rtl:rotate-180"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-4 lg:mt-8 lg:grid lg:grid-cols-4 lg:items-start lg:gap-8">
+          {/* Sort By */}
+          <div className="hidden space-y-4 lg:block">
+            <div className="bg-white p-4 rounded-lg shadow-lg">
+              <label htmlFor="SortBy" className="block text-xs font-medium text-gray-700"> Sort By </label>
+              <select
+                id="SortBy"
+                className="mt-1 rounded border-gray-300 text-sm"
+                onChange={handleSortChange}
+                value={sortBy}
+              >
+                <option value="">Sort By</option>
+                <option value="price, ASC">Price, Low to High</option>
+                <option value="price, DESC">Price, High to Low</option>
+                <option value="name, ASC">Name, A to Z</option>
+                <option value="name, DESC">Name, Z to A</option>
+              </select>
+            </div>
+
+            {/* Filter by Price Range */}
+            <div className="bg-white p-4 rounded-lg shadow-lg">
+              <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700"> Min Price </label>
+              <input
+                type="number"
+                id="minPrice"
+                name="minPrice"
+                value={priceRange.minPrice}
+                onChange={handlePriceRangeChange}
+                className="mt-1 rounded border-gray-300 text-sm"
+                placeholder="Min Price"
               />
-
-              <div className="relative bg-white pt-3">
-                <h3
-                  className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4"
-                >
-                  Basic Tee
-                </h3>
-
-                <p className="mt-2">
-                  <span className="sr-only"> Regular Price </span>
-
-                  <span className="tracking-wider text-gray-900"> £24.00 GBP </span>
-                </p>
-              </div>
-            </a>
-          </li>
-
-          <li>
-            <a href="#" className="group block overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
-                alt=""
-                className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]"
+              <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700"> Max Price </label>
+              <input
+                type="number"
+                id="maxPrice"
+                name="maxPrice"
+                value={priceRange.maxPrice}
+                onChange={handlePriceRangeChange}
+                className="mt-1 rounded border-gray-300 text-sm"
+                placeholder="Max Price"
               />
+            </div>
 
-              <div className="relative bg-white pt-3">
-                <h3
-                  className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4"
-                >
-                  Basic Tee
-                </h3>
+            {/* Availability */}
+            <div className="bg-white p-4 rounded-lg shadow-lg">
+              <label htmlFor="Availability" className="block text-xs font-medium text-gray-700"> Availability </label>
+              <select
+                id="Availability"
+                className="mt-1 rounded border-gray-300 text-sm"
+                onChange={handleAvailabilityChange}
+                value={availability}
+              >
+                <option value="">All</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
 
-                <p className="mt-2">
-                  <span className="sr-only"> Regular Price </span>
-
-                  <span className="tracking-wider text-gray-900"> £24.00 GBP </span>
-                </p>
-              </div>
-            </a>
-          </li>
-
-          <li>
-            <a href="#" className="group block overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
-                alt=""
-                className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]"
-              />
-
-              <div className="relative bg-white pt-3">
-                <h3
-                  className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4"
-                >
-                  Basic Tee
-                </h3>
-
-                <p className="mt-2">
-                  <span className="sr-only"> Regular Price </span>
-
-                  <span className="tracking-wider text-gray-900"> £24.00 GBP </span>
-                </p>
-              </div>
-            </a>
-          </li>
-        </ul>
+          {/* Product Listing */}
+          <div className="lg:col-span-3">
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Map through filtered products and render each product */}
+              {filteredProducts.map(product => (
+                <li key={product._id}>
+                  <a href="#" className="group block overflow-hidden">
+                    {/* Product image */}
+                    <img src={product.image} alt={product.name} className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]" />
+                    
+                    {/* Product details */}
+                    <div className="relative bg-white pt-3">
+                      <h3 className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+                      <p className="mt-2">
+                        <span className="sr-only"> Regular Price </span>
+                        <span className="tracking-wider text-gray-900">{product.price} GBP</span>
+                      </p>
+                    </div>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <Footer />
-</section>
-
-      );
-    };
+      <Footer />
+    </section>
+  );
+};
 
 export default LandingPage;

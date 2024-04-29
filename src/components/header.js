@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/header.css';
 const header = () => {
     return(
@@ -31,10 +32,9 @@ const header = () => {
             <li>
               <a className="text-gray-500 transition hover:text-gray-500/75" href="#"> Help </a>
             </li>
-
             <li>
-              <a className="text-gray-500 transition hover:text-gray-500/75" href="#"> Admin </a>
-            </li>
+                  <Link to="/admin" className="text-gray-500 transition hover:text-gray-500/75"> Admin </Link> {/* Change to Link component */}
+                </li>
 
           </ul>
         </nav>
