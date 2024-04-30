@@ -5,7 +5,6 @@ import Header from './components/header';
 import AdminPage from './components/admin/adminpage'; // Import the AdminPage component
 import AddProductForm from './components/admin/addproductform';
 
-
 const App = () => {
   return (
     <Router>

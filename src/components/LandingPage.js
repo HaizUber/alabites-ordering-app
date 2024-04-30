@@ -8,6 +8,7 @@ const LandingPage = () => {
   const [priceRange, setPriceRange] = useState({ minPrice: '', maxPrice: '' });
   const [availability, setAvailability] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,6 +75,11 @@ const LandingPage = () => {
     setAvailability(event.target.value);
   };
 
+  const toggleFilters = () => {
+    setShowFilters(!showFilters); // Toggle the visibility of filters
+  };
+
+
   return (
     <section className="relative bg-[url(https://www.capgros.com/uploads/s1/10/48/04/1/istock-1053271298.jpeg)] bg-cover bg-center bg-no-repeat" style={{ height: '50vh' }}>
       {/* Background overlay */}
@@ -121,20 +127,81 @@ const LandingPage = () => {
         {/* Filters & Sorting */}
         <div className="mt-8 block lg:hidden">
           <button
+            onClick={toggleFilters} // Toggle visibility on button click
             className="flex cursor-pointer items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600"
           >
-            <span className="text-sm font-medium"> Filters & Sorting </span>
+            <span className="text-sm font-medium">Filters & Sorting</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              className="size-4 rtl:rotate-180"
+              className={`size-4 ${showFilters ? 'rtl:rotate-180' : ''}`} // Rotate icon based on filter visibility
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
+          
+          {showFilters && (
+            <div className="mt-4">
+              {/* Sort By */}
+              <div className="bg-white p-4 rounded-lg shadow-lg mt-4">
+                <label htmlFor="SortBy" className="block text-xs font-medium text-gray-700"> Sort By </label>
+                <select
+                  id="SortBy"
+                  className="mt-1 rounded border-gray-300 text-sm"
+                  onChange={handleSortChange}
+                  value={sortBy}
+                >
+                  <option value="">Sort By</option>
+                  <option value="price, ASC">Price, Low to High</option>
+                  <option value="price, DESC">Price, High to Low</option>
+                  <option value="name, ASC">Name, A to Z</option>
+                  <option value="name, DESC">Name, Z to A</option>
+                </select>
+              </div>
+
+              {/* Filter by Price Range */}
+              <div className="bg-white p-4 rounded-lg shadow-lg mt-4">
+                <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700"> Min Price </label>
+                <input
+                  type="number"
+                  id="minPrice"
+                  name="minPrice"
+                  value={priceRange.minPrice}
+                  onChange={handlePriceRangeChange}
+                  className="mt-1 rounded border-gray-300 text-sm"
+                  placeholder="Min Price"
+                />
+                <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700"> Max Price </label>
+                <input
+                  type="number"
+                  id="maxPrice"
+                  name="maxPrice"
+                  value={priceRange.maxPrice}
+                  onChange={handlePriceRangeChange}
+                  className="mt-1 rounded border-gray-300 text-sm"
+                  placeholder="Max Price"
+                />
+              </div>
+
+              {/* Availability */}
+              <div className="bg-white p-4 rounded-lg shadow-lg mt-4">
+                <label htmlFor="Availability" className="block text-xs font-medium text-gray-700"> Availability </label>
+                <select
+                  id="Availability"
+                  className="mt-1 rounded border-gray-300 text-sm"
+                  onChange={handleAvailabilityChange}
+                  value={availability}
+                >
+                  <option value="">All</option>
+                  <option value="In Stock">In Stock</option>
+                  <option value="Out of Stock">Out of Stock</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -205,14 +272,14 @@ const LandingPage = () => {
                 <li key={product._id}>
                   <a href="#" className="group block overflow-hidden">
                     {/* Product image */}
-                    <img src={product.image} alt={product.name} className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]" />
+                    <img src={product.photoReference} alt={product.name} className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]" />
                     
                     {/* Product details */}
                     <div className="relative bg-white pt-3">
                       <h3 className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
                       <p className="mt-2">
                         <span className="sr-only"> Regular Price </span>
-                        <span className="tracking-wider text-gray-900">{product.price} GBP</span>
+                        <span className="tracking-wider text-gray-900">{product.price} PHP</span>
                       </p>
                     </div>
                   </a>
