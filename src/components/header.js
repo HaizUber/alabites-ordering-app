@@ -32,31 +32,28 @@ const header = () => {
             <li>
               <a className="text-gray-500 transition hover:text-gray-500/75" href="#"> Help </a>
             </li>
-            <li>
-                  <Link to="/admin" className="text-gray-500 transition hover:text-gray-500/75"> Admin </Link> {/* Change to Link component */}
-                </li>
 
           </ul>
         </nav>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="sm:flex sm:gap-4">
-          <a
-            className="rounded-md bg-green-800 px-5 py-2.5 text-sm font-medium text-white shadow"
-            href="#"
-          >
-            Login
-          </a>
+      <div className="sm:flex sm:gap-4">
+        <Link
+          to="/login/student" // Specify the path to redirect to
+          className="rounded-md bg-green-800 px-5 py-2.5 text-sm font-medium text-white shadow"
+        >
+          Login
+        </Link>
 
-          <div className="hidden sm:flex">
-            <a
-              className="rounded-md bg-gray-100 px-5 py-2.5 text-sm font-medium text-teal-600"
-              href="#"
-            >
-              Register
-            </a>
-          </div>
+        <div className="hidden sm:flex">
+          <Link
+            to="/register/student" // Specify the path to redirect to
+            className="rounded-md bg-gray-100 px-5 py-2.5 text-sm font-medium text-teal-600"
+          >
+            Register
+          </Link>
+        </div>
         </div>
 
         <div className="block md:hidden">
