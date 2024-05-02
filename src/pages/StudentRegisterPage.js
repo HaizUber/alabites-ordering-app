@@ -69,13 +69,16 @@ function StudentRegisterPage() {
         role: "student"
       });
 
-      // Show success toast
-      toast.success("Registration successful! Redirecting...", {
-        onClose: () => {
-          // Redirect to student dashboard or other page upon successful registration
-          navigate('/login/student'); // Redirect to login page after successful registration
-        }
-      });
+// Show success toast with a timeout
+toast.success("Registration successful! Redirecting...", {
+  autoClose: 3500, // Auto close the toast after 3.5 seconds
+});
+
+// Redirect the user to the login page after 3.5 seconds
+setTimeout(() => {
+  navigate('/'); // Redirect to login page after 3.5 seconds
+}, 3500);
+
 
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
