@@ -30,66 +30,71 @@ function StudentRegisterPage() {
     return strength;
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  function generateStudentUID() {
+    const prefix = '8000';
+    const randomDigits = Math.floor(100000 + Math.random() * 900000); // Generate random 6-digit number
+    return prefix + randomDigits.toString(); // Concatenate prefix and random number
+  }
+  
+const handleRegister = async (e) => {
+  e.preventDefault();
 
-    if (passwordStrength < 2) {
-      toast.error("Password is too weak. Password must have at least 6 characters, including uppercase, lowercase, digit, and special character.");
+  if (passwordStrength < 2) {
+    toast.error("Password is too weak. Password must have at least 6 characters, including uppercase, lowercase, digit, and special character.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    toast.error("Passwords do not match.");
+    return;
+  }
+
+  try {
+    if (studentNumber.length !== 9) {
+      toast.error("Student number must be 9 digits long.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Invalid email address.");
       return;
     }
 
-    try {
-      if (studentNumber.length !== 9) {
-        toast.error("Student number must be 9 digits long.");
-        return;
-      }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        toast.error("Invalid email address.");
-        return;
-      }
+    const studentUID = generateStudentUID(); // Generate student UID
+    await axios.post("https://alabites-api.vercel.app/users", {
+      uid: studentUID, // Use generated UID
+      email,
+      firstName,
+      lastName,
+      username,
+      studentNumber,
+      role: "student"
+    });
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
+    // Show success toast with a timeout
+    toast.success("Registration successful! Redirecting...", {
+      autoClose: 3500, // Auto close the toast after 3.5 seconds
+    });
 
-      await axios.post("https://alabites-api.vercel.app/users", {
-        uid: user.uid,
-        email,
-        firstName,
-        lastName,
-        username,
-        studentNumber,
-        role: "student"
-      });
+    // Redirect the user to the login page after 3.5 seconds
+    setTimeout(() => {
+      navigate('/'); // Redirect to login page after 3.5 seconds
+    }, 3500);
 
-// Show success toast with a timeout
-toast.success("Registration successful! Redirecting...", {
-  autoClose: 3500, // Auto close the toast after 3.5 seconds
-});
-
-// Redirect the user to the login page after 3.5 seconds
-setTimeout(() => {
-  navigate('/'); // Redirect to login page after 3.5 seconds
-}, 3500);
-
-
-    } catch (error) {
-      if (error.code === "auth/email-already-in-use") {
-        console.error("Error registering:", error.message);
-        toast.error("Email address is already in use. Please use a different email address.");
-      } else {
-        console.error("Error registering:", error);
-        toast.error("An error occurred during registration. Please try again later.");
-      }
+  } catch (error) {
+    if (error.code === "auth/email-already-in-use") {
+      console.error("Error registering:", error.message);
+      toast.error("Email address is already in use. Please use a different email address.");
+    } else {
+      console.error("Error registering:", error);
+      toast.error("An error occurred during registration. Please try again later.");
     }
-  };
+  }
+};
 
   const handlePasswordChange = (e) => {
     const strength = calculatePasswordStrength(e.target.value);

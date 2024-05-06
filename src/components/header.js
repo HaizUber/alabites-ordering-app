@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/header.css';
 
@@ -20,10 +20,11 @@ const Header = () => {
       if (user) {
         setIsLoggedIn(true);
         try {
-          const uid = user.uid;
           const response = await axios.get(`https://alabites-api.vercel.app/users`);
-          const userData = response.data.data.find((user) => user.uid === uid);
+          const userData = response.data.data.find((userData) => userData.email === user.email);
           if (userData) {
+            const uid = userData.uid;
+            console.log('uid:', uid); // Log the uid
             setUsername(userData.username);
           } else {
             setUsername('');
@@ -34,7 +35,7 @@ const Header = () => {
           // Check if the error is due to the user not being found
           if (error.response && error.response.status === 404) {
             // User not found, ignore the error
-            setUsername('');
+            setUsername('Student');
           } else {
             // Other errors, display toast
             toast.error('Error fetching user data');
@@ -47,11 +48,10 @@ const Header = () => {
     });
     
     return () => unsubscribe();
-  }, [isLoggedIn]); // Adding isLoggedIn to the dependency array
+  }, [isLoggedIn]);
   
-  
-
   const handleLogout = () => {
+    console.log("Logging out...");
     const auth = getAuth();
     auth.signOut().then(() => {
       toast.success('Logout successful');
@@ -60,6 +60,7 @@ const Header = () => {
       toast.error('Error logging out. Please try again.');
     });
   };
+  
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, username }}>
@@ -118,8 +119,10 @@ const Header = () => {
 
           </div>
         </div>
+        <ToastContainer/> 
       </header>
     </AuthContext.Provider>
+    
   );
 };
 

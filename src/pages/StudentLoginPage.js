@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 function StudentLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [studentNumber, setStudentNumber] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -16,13 +15,8 @@ function StudentLoginPage() {
     try {
       // Sign in the student using Firebase Authentication
       await signInWithEmailAndPassword(auth, email, password);
-      // Show toast notification for successful login
-      toast.success("Login successful!");
-      // Delay the redirection by a short time to ensure the toast notification is displayed
-      setTimeout(() => {
-        // Redirect to LandingPage.js upon successful login
-        navigate("/");
-      }, 1500); // You can adjust the delay time as needed
+      navigate('/'); 
+
     } catch (error) {
       console.error("Error signing in:", error);
       // Show toast notification for login error
@@ -30,20 +24,17 @@ function StudentLoginPage() {
     }
   };
   
-  
-
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-lg">
-        <h1 className="text-center text-2xl font-bold text-indigo-600 sm:text-3xl">Get started today</h1>
+        <h1 className="text-center text-2xl font-bold text-green-600 sm:text-3xl">Log in to Alabites</h1>
 
         <p className="mx-auto mt-4 max-w-md text-center text-gray-500">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Obcaecati sunt dolores deleniti
-          inventore quaerat mollitia?
+          With Alabites, ordering your favorite foods have never been this easy!
         </p>
 
         <form onSubmit={handleLogin} className="mb-0 mt-6 space-y-4 rounded-lg p-4 shadow-lg sm:p-6 lg:p-8">
-          <p className="text-center text-lg font-medium">Sign in to your account</p>
+          <p className="text-center text-lg font-medium">Sign in to your Alabites account</p>
 
           <div>
             <label htmlFor="email" className="sr-only">Email</label>
@@ -115,7 +106,7 @@ function StudentLoginPage() {
 
           <button
             type="submit"
-            className="block w-full rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white"
+            className="block w-full rounded-lg bg-green-600 px-5 py-3 text-sm font-medium text-white"
           >
             Sign in
           </button>
@@ -126,7 +117,7 @@ function StudentLoginPage() {
           </p>
         </form>
       </div>
-      <ToastContainer />
+      <ToastContainer autoClose={2000}/>
     </div>
   );
 }
