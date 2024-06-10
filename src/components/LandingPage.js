@@ -1,15 +1,43 @@
 import React, { useState, useEffect } from "react";
 import Footer from '../components/footer.js';
+import ProductModal from "../components/ProductModal";
+import CartModal from "../components/CartModal";
 import '../styles/LandingPage.css';
 
-const LandingPage = () => {
+const LandingPage = ({ cartItems, setCartItems }) => {
   const [products, setProducts] = useState([]);
   const [sortBy, setSortBy] = useState("");
   const [priceRange, setPriceRange] = useState({ minPrice: '', maxPrice: '' });
   const [availability, setAvailability] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
+  useEffect(() => {
+    const savedCartItems = localStorage.getItem('cartItems');
+    if (savedCartItems) {
+      setCartItems(JSON.parse(savedCartItems));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  const addToCart = (product) => {
+    const existingProductIndex = cartItems.findIndex(item => item.id === product.id);
+
+    let updatedCartItems;
+    if (existingProductIndex !== -1) {
+      updatedCartItems = [...cartItems];
+      updatedCartItems[existingProductIndex].quantity += product.quantity;
+    } else {
+      updatedCartItems = [...cartItems, product];
+    }
+
+    setCartItems(updatedCartItems);
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,6 +56,24 @@ const LandingPage = () => {
     fetchData();
   }, []);
 
+    // Add logging to useEffect for debugging
+    useEffect(() => {
+      console.log("Current cart items inside:", cartItems);
+    }, [cartItems]);
+    
+    useEffect(() => {
+      // Save cart items to localStorage whenever it changes
+      localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    }, [cartItems]);
+  
+    useEffect(() => {
+      // Load cart items from localStorage on component mount
+      const storedCartItems = JSON.parse(localStorage.getItem('cartItems'));
+      if (storedCartItems) {
+        setCartItems(storedCartItems);
+      }
+    }, []);
+
   useEffect(() => {
     applyFilters();
   }, [products, sortBy, priceRange, availability]);
@@ -37,15 +83,15 @@ const LandingPage = () => {
 
     // Filter by availability
     if (availability === "In Stock") {
-      filteredProducts = filteredProducts.filter(product => product.availability === "In Stock");
+      filteredProducts = filteredProducts.filter(product => product.stock > 0);
     } else if (availability === "Out of Stock") {
-      filteredProducts = filteredProducts.filter(product => product.availability !== "In Stock");
+      filteredProducts = filteredProducts.filter(product => product.stock === 0);
     }
 
     // Filter by price range
     filteredProducts = filteredProducts.filter(product => {
-      const minPrice = parseInt(priceRange.minPrice);
-      const maxPrice = parseInt(priceRange.maxPrice);
+      const minPrice = parseFloat(priceRange.minPrice);
+      const maxPrice = parseFloat(priceRange.maxPrice);
       return (!minPrice || product.price >= minPrice) && (!maxPrice || product.price <= maxPrice);
     });
 
@@ -79,6 +125,13 @@ const LandingPage = () => {
     setShowFilters(!showFilters); // Toggle the visibility of filters
   };
 
+  const openModal = (product) => {
+    setSelectedProduct(product);
+  };
+
+  const closeModal = () => {
+    setSelectedProduct(null);
+  };
 
   return (
     <section className="relative bg-[url(https://www.capgros.com/uploads/s1/10/48/04/1/istock-1053271298.jpeg)] bg-cover bg-center bg-no-repeat" style={{ height: '50vh' }}>
@@ -250,7 +303,7 @@ const LandingPage = () => {
 
             {/* Availability */}
             <div className="bg-white p-4 rounded-lg shadow-lg">
-              <label htmlFor="Availability" className="block text-xs font-medium text-gray-700"> Availability </label>
+            <label htmlFor="Availability" className="block text-xs font-medium text-gray-700"> Availability </label>
               <select
                 id="Availability"
                 className="mt-1 rounded border-gray-300 text-sm"
@@ -264,29 +317,34 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Product Listing */}
-          <div className="lg:col-span-3">
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Map through filtered products and render each product */}
-              {filteredProducts.map(product => (
-                <li key={product._id}>
-                  <a href="#" className="group block overflow-hidden">
-                    {/* Product image */}
-                    <img src={product.photoReference} alt={product.name} className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]" />
-                    
-                    {/* Product details */}
-                    <div className="relative bg-white pt-3">
-                      <h3 className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
-                      <p className="mt-2">
-                        <span className="sr-only"> Regular Price </span>
-                        <span className="tracking-wider text-gray-900">{product.price} PHP</span>
-                      </p>
-                    </div>
-                  </a>
-                </li>
-              ))}
-            </ul>
+{/* Product Listing */}
+<div className="lg:col-span-3">
+  <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {/* Map through filtered products and render each product */}
+    {filteredProducts.map(product => (
+      <li key={product._id}>
+        <a href="#" className="group block overflow-hidden" onClick={() => openModal(product)}>
+          {/* Product image */}
+          <img src={product.productPhotos[0]} alt={product.name} className="h-[350px] w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[450px]" />
+          
+          {/* Product details */}
+          <div className="relative bg-white pt-3">
+            <h3 className="text-xs text-gray-700 group-hover:underline group-hover:underline-offset-4">{product.name}</h3>
+            <p className="mt-2">
+              <span className="sr-only"> Regular Price </span>
+              <span className="tracking-wider text-gray-900">{product.price} PHP</span>
+            </p>
           </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
+{/* Product Modal */}
+{selectedProduct && (
+  <ProductModal product={selectedProduct} onClose={closeModal} addToCart={addToCart} />
+)}
         </div>
       </div>
       <Footer />
@@ -295,3 +353,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
