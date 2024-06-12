@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,134 +22,289 @@ const [purchasedItems, setPurchasedItems] = useState([]);
 const navigate = useNavigate();
 const [cardholderName, setCardholderName] = useState('');
 const [isCardNameValid, setIsCardNameValid] = useState(false);
+const [paymentMethod, setPaymentMethod] = useState('card');
 
 const handlePayment = async () => {
-  // Check if any required fields are missing
-  if (!cardNumber || !expMonth || !expYear || !cvc || !cardholderName) {
-    const missingFields = [];
-    if (!cardNumber) missingFields.push('Card Number');
-    if (!expMonth) missingFields.push('Expiration Month');
-    if (!expYear) missingFields.push('Expiration Year');
-    if (!cvc) missingFields.push('Security Code');
-    if (!cardholderName) missingFields.push('Name on Card');
+  if (paymentMethod === 'card') {
+    // Check if any required fields are missing for card payment
+    if (!cardNumber || !expMonth || !expYear || !cvc || !cardholderName) {
+      const missingFields = [];
+      if (!cardNumber) missingFields.push('Card Number');
+      if (!expMonth) missingFields.push('Expiration Month');
+      if (!expYear) missingFields.push('Expiration Year');
+      if (!cvc) missingFields.push('Security Code');
+      if (!cardholderName) missingFields.push('Name on Card');
 
-    toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-    return;
+      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
   }
 
   setIsLoading(true);
   setError(null);
   toast.info('Processing payment...');
 
-  try {
-    const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
+  const auth = getAuth();
 
-    const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
-      data: {
-        attributes: {
-          type: 'card',
-          details: {
-            card_number: cardNumber.replace(/\s+/g, ''), // Remove spaces from card number
-            exp_month: parseInt(expMonth, 10),  // Ensure exp_month is an integer
-            exp_year: parseInt(expYear, 10),    // Ensure exp_year is an integer
-            cvc,
-            billing: {  // Add billing details including cardholder's name
-              name: cardholderName // Include the cardholder's name here
-            }
-          },
-        },
-      },
-    }, {
-      headers: {
-        Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const paymentMethodId = paymentMethodResponse.data.data.id;
-
-    const paymentIntentResponse = await axios.post('https://api.paymongo.com/v1/payment_intents', {
-      data: {
-        attributes: {
-          amount: totalPrice * 100, // Amount in centavos
-          payment_method_allowed: ['card'],
-          currency: 'PHP',
-          description: cartItems.map(item => item.name).join(', '),
-          statement_descriptor: 'Your Company Name',
-          capture_type: 'automatic',
-        },
-      },
-    }, {
-      headers: {
-        Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    await axios.post(`https://api.paymongo.com/v1/payment_intents/${paymentIntentResponse.data.data.id}/attach`, {
-      data: {
-        attributes: {
-          payment_method: paymentMethodId,
-        },
-      },
-    }, {
-      headers: {
-        Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    for (const item of cartItems) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
       try {
-        // Fetch the current stock of the product
-        const response = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+        const userIdResponse = await axios.get(`https://alabites-api.vercel.app/users`);
+        const currentUser = userIdResponse.data.data.find((userData) => userData.email === user.email);
+        if (!currentUser) {
+          throw new Error('User not found');
+        }
         
-        // Log the API response for debugging
-        console.log('API Response:', response.data);
-        
-        // Validate response data structure
-        if (response.data && response.data.message === 'Success' && Array.isArray(response.data.data) && response.data.data.length > 0) {
-          const product = response.data.data[0];
-          if (product.stock !== undefined) {
-            const currentStock = product.stock;
-            const updatedStock = currentStock - item.quantity;
-        
-            console.log(`Product ID: ${item.pid}, Current Stock: ${currentStock}, Quantity to Deduct: ${item.quantity}`);
-            console.log(`Updated Stock: ${updatedStock}`);
-        
-            // Update the stock using PATCH request
-            await axios.patch(`https://alabites-api.vercel.app/products/${item.id}/stock`, {
-              stock: updatedStock // Ensure you are sending the correct property
-            });
-        
-            console.log(`Stock updated successfully for Product ID: ${item.pid}`);
-          } else {
-            console.error('Error updating stock: Stock property missing from response');
-          }
+        const currentUserId = currentUser.uid;
+
+        if (paymentMethod === 'tamcredits') {
+          await handleTamCreditsPayment(currentUserId);
         } else {
-          console.error('Error updating stock: Invalid or empty response from API');
+          const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
+
+          const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
+            data: {
+              attributes: {
+                type: 'card',
+                details: {
+                  card_number: cardNumber.replace(/\s+/g, ''), // Remove spaces from card number
+                  exp_month: parseInt(expMonth, 10),  // Ensure exp_month is an integer
+                  exp_year: parseInt(expYear, 10),    // Ensure exp_year is an integer
+                  cvc,
+                  billing: {  // Add billing details including cardholder's name
+                    name: cardholderName // Include the cardholder's name here
+                  }
+                },
+              },
+            },
+          }, {
+            headers: {
+              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const paymentMethodId = paymentMethodResponse.data.data.id;
+
+          const paymentIntentResponse = await axios.post('https://api.paymongo.com/v1/payment_intents', {
+            data: {
+              attributes: {
+                amount: totalPrice * 100, // Amount in centavos
+                payment_method_allowed: ['card'],
+                currency: 'PHP',
+                description: cartItems.map(item => item.name).join(', '),
+                statement_descriptor: 'Your Company Name',
+                capture_type: 'automatic',
+              },
+            },
+          }, {
+            headers: {
+              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          await axios.post(`https://api.paymongo.com/v1/payment_intents/${paymentIntentResponse.data.data.id}/attach`, {
+            data: {
+              attributes: {
+                payment_method: paymentMethodId,
+              },
+            },
+          }, {
+            headers: {
+              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          for (const item of cartItems) {
+            try {
+              const response = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+              
+              if (response.data && response.data.message === 'Success' && Array.isArray(response.data.data) && response.data.data.length > 0) {
+                const product = response.data.data[0];
+                if (product.stock !== undefined) {
+                  const currentStock = product.stock;
+                  const updatedStock = currentStock - item.quantity;
+  
+                  await axios.patch(`https://alabites-api.vercel.app/products/${item.id}/stock`, {
+                    stock: updatedStock
+                  });
+                } else {
+                  console.error('Error updating stock: Stock property missing from response');
+                }
+              } else {
+                console.error('Error updating stock: Invalid or empty response from API');
+              }
+            } catch (error) {
+              console.error(`Error updating stock for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
+            }
+          }
+
+          const generateOrderId = () => {
+            const prefix = "3000";
+            const randomDigits = Math.floor(100000 + Math.random() * 900000); // Generate 6 random digits
+            return prefix + randomDigits;
+          };
+          
+          const orderId = generateOrderId(); // Generate orderId
+          
+          const totalAmount = totalPrice; // Assuming totalPrice represents the total paid amount
+          
+          const transaction = {
+            type: 'debit',
+            amount: totalAmount,
+            description: `Purchase of ${cartItems.map(item => item.name).join(', ')}`,
+            orderId: orderId
+          };
+          
+          try {
+            const response = await axios.post(`https://alabites-api.vercel.app/users/${currentUserId}/transaction`, {
+              transaction
+            }, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+          
+            console.log("Transaction response:", response.data);
+          } catch (error) {
+            console.error("Error sending transaction:", error);
+          }
+
+          toast.success('Payment successful!');
+          setShowModal(true);
         }
       } catch (error) {
-        // Detailed error logging
-        console.error(`Error updating stock for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
+        setError(error.message);
+        toast.error('Payment failed. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
+    } else {
+      toast.error('User not authenticated');
+      setIsLoading(false);
     }
-        
-    toast.success('Payment successful!');
+  });
+};
+
+const handleTamCreditsPayment = async (userId) => {
+  try {
+    // Fetch user's TamCredits balance
+    const tamCreditsBalance = await getUserTamCreditsBalance(userId);
+
+    // Calculate total price in TamCredits
+    const totalPriceInTamCredits = calculateTotalPriceInTamCredits(cartItems);
+
+    // Check if user has sufficient TamCredits balance
+    if (tamCreditsBalance < totalPriceInTamCredits) {
+      throw new Error('Insufficient TamCredits balance');
+    }
+
+    // Update user's TamCredits balance
+    await updateUserTamCreditsBalance(userId, totalPriceInTamCredits);
+
+    // Add transaction to user's transaction history
+    await addTransactionToUser(userId, totalPriceInTamCredits, cartItems);
+
+    // Generate order ID
+    const orderId = generateOrderId();
+
+    // Display success message and show modal
+    toast.success('Payment with TamCredits successful!');
     setShowModal(true);
   } catch (error) {
-    console.error('Error:', error.response ? error.response.data : error.message);
-
-    if (error.response && error.response.data && error.response.data.errors) {
-      const errorDetail = error.response.data.errors[0].detail;
-      toast.error(`Payment failed: ${errorDetail}`);
-    } else {
-      toast.error('Payment failed. Please try again.');
-    }
+    console.error('Error spending TamCredits:', error.response ? error.response.data : error.message);
+    toast.error('Payment with TamCredits failed. Please try again.');
   } finally {
     setIsLoading(false);
   }
 };
+
+// Method to get user's TamCredits balance
+const getUserTamCreditsBalance = async (userId) => {
+  try {
+    const userResponse = await axios.get(`https://alabites-api.vercel.app/users`);
+    const currentUser = userResponse.data.data.find((userData) => userData.uid === userId);
+    if (!currentUser) {
+      throw new Error('User not found');
+    }
+    return currentUser.currencyBalance;
+  } catch (error) {
+    throw new Error('Error fetching user data');
+  }
+};
+
+// Method to calculate total price in TamCredits
+const calculateTotalPriceInTamCredits = (cartItems) => {
+  // Initialize total price
+  let totalPrice = 0;
+
+  // Iterate over cart items and sum up the total price
+  cartItems.forEach(item => {
+    totalPrice += item.price * item.quantity; // Assuming item price is in PHP
+  });
+
+  return totalPrice;
+};
+
+// Method to update user's TamCredits balance
+const updateUserTamCreditsBalance = async (userId, totalPrice) => {
+  try {
+    // Fetch current user
+    const userResponse = await axios.get(`https://alabites-api.vercel.app/users/${userId}`);
+    const currentUser = userResponse.data.data;
+
+    // Calculate new balance
+    const newBalance = currentUser.currencyBalance - totalPrice;
+
+    // Update user's balance in the database
+    const updatedUserResponse = await axios.patch(`https://alabites-api.vercel.app/users/${userId}`, {
+      currencyBalance: newBalance
+    });
+
+    // Check if the user was successfully updated
+    if (updatedUserResponse.status !== 200) {
+      throw new Error('Failed to update user balance');
+    }
+  } catch (error) {
+    throw new Error('Error updating user balance');
+  }
+};
+
+const addTransactionToUser = async (userId, amount, cartItems) => {
+  try {
+    const transaction = {
+      type: 'debit',
+      amount,
+      description: `Purchase of ${cartItems.map(item => item.name).join(', ')}`,
+      orderId: generateOrderId()
+    };
+
+    // Send a POST request to add the transaction
+    const response = await axios.post(
+      `https://alabites-api.vercel.app/users/${userId}/transaction`,
+      { transaction },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    // Check if the transaction was successfully added
+    if (response.status !== 200) {
+      throw new Error('Failed to add transaction to user');
+    }
+  } catch (error) {
+    throw new Error('Error adding transaction to user');
+  }
+};
+
+// Method to generate order ID
+const generateOrderId = () => {
+  const prefix = "3000";
+  const randomDigits = Math.floor(100000 + Math.random() * 900000); // Generate 6 random digits
+  return prefix + randomDigits;
+};
+
+
 
 const handleCloseModal = () => {
   setShowModal(false);
@@ -244,7 +400,7 @@ const handleCloseModal = () => {
                 <div className="w-full p-3 border-b border-gray-200">
                   <div className="mb-5">
                     <label htmlFor="type1" className="flex items-center cursor-pointer">
-                      <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type1" defaultChecked/>
+                    <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type1" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
                       <img src="https://th.bing.com/th/id/OIP.l-TAh-Y3NhgW26fiLmk-gAAAAA?rs=1&pid=ImgDetMain" className="h-6 ml-3"/>
                     </label>
                   </div>
@@ -328,13 +484,12 @@ const handleCloseModal = () => {
                   </div>
                 </div>
                 <div className="w-full p-3">
-                  <label htmlFor="type2" className="flex items-center cursor-pointer">
-                    <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type2"/>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" width="80" className="ml-3"/>
-                  </label>
-                </div>
-              </div>
-              <div>
+  <label htmlFor="type2" className="flex items-center cursor-pointer">
+  <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type2" checked={paymentMethod === 'tamcredits'} onChange={() => setPaymentMethod('tamcredits')} />
+    <span className="ml-3">Pay with TamCredits</span>
+  </label>
+</div>
+
                 <button 
                   className="block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-2 font-semibold" 
                   onClick={handlePayment}
