@@ -58,7 +58,7 @@ const handlePayment = async () => {
         const currentUserId = currentUser.uid;
 
         if (paymentMethod === 'tamcredits') {
-          await handleTamCreditsPayment(currentUserId);
+          await handleTamCreditsPayment(currentUserId, cartItems);
         } else {
           const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
 
@@ -188,29 +188,26 @@ const handlePayment = async () => {
   });
 };
 
-const handleTamCreditsPayment = async (userId) => {
+const handleTamCreditsPayment = async (userId, cartItems) => {
   try {
-    // Fetch user's TamCredits balance
+    console.log('Handling payment for userId:', userId);
+
     const tamCreditsBalance = await getUserTamCreditsBalance(userId);
+    console.log('TamCredits balance:', tamCreditsBalance);
 
-    // Calculate total price in TamCredits
     const totalPriceInTamCredits = calculateTotalPriceInTamCredits(cartItems);
+    console.log('Total price in TamCredits:', totalPriceInTamCredits);
 
-    // Check if user has sufficient TamCredits balance
     if (tamCreditsBalance < totalPriceInTamCredits) {
       throw new Error('Insufficient TamCredits balance');
     }
 
-    // Update user's TamCredits balance
     await updateUserTamCreditsBalance(userId, totalPriceInTamCredits);
 
-    // Add transaction to user's transaction history
     await addTransactionToUser(userId, totalPriceInTamCredits, cartItems);
 
-    // Generate order ID
-    const orderId = generateOrderId();
+    await updateProductStock(cartItems);
 
-    // Display success message and show modal
     toast.success('Payment with TamCredits successful!');
     setShowModal(true);
   } catch (error) {
@@ -224,16 +221,22 @@ const handleTamCreditsPayment = async (userId) => {
 // Method to get user's TamCredits balance
 const getUserTamCreditsBalance = async (userId) => {
   try {
+    console.log('Fetching TamCredits for userId:', userId);
     const userResponse = await axios.get(`https://alabites-api.vercel.app/users`);
+    console.log('User response:', userResponse.data);
+
     const currentUser = userResponse.data.data.find((userData) => userData.uid === userId);
     if (!currentUser) {
       throw new Error('User not found');
     }
     return currentUser.currencyBalance;
   } catch (error) {
+    console.error('Error fetching user data:', error.response ? error.response.data : error.message);
     throw new Error('Error fetching user data');
   }
 };
+
+
 
 // Method to calculate total price in TamCredits
 const calculateTotalPriceInTamCredits = (cartItems) => {
@@ -251,31 +254,38 @@ const calculateTotalPriceInTamCredits = (cartItems) => {
 // Method to update user's TamCredits balance
 const updateUserTamCreditsBalance = async (userId, totalPrice) => {
   try {
-    // Fetch current user
+    console.log('Updating TamCredits for userId:', userId);
+    
+    // Fetch the current user data
     const userResponse = await axios.get(`https://alabites-api.vercel.app/users/${userId}`);
-    const currentUser = userResponse.data.data;
+    console.log('Current user data:', userResponse.data);
 
-    // Calculate new balance
+    const currentUser = userResponse.data.data;
     const newBalance = currentUser.currencyBalance - totalPrice;
 
-    // Update user's balance in the database
-    const updatedUserResponse = await axios.patch(`https://alabites-api.vercel.app/users/${userId}`, {
-      currencyBalance: newBalance
+    console.log('New balance:', newBalance);
+
+    // Make the PATCH request to the correct endpoint
+    const updateEndpoint = `https://alabites-api.vercel.app/users/${userId}/spend-currency`;
+    const updatedUserResponse = await axios.patch(updateEndpoint, {
+      amount: totalPrice
     });
 
-    // Check if the user was successfully updated
-    if (updatedUserResponse.status !== 200) {
-      throw new Error('Failed to update user balance');
-    }
+    console.log('Updated user data:', updatedUserResponse.data);
+    return updatedUserResponse.data;
   } catch (error) {
+    console.error('Error updating user balance:', error.response ? error.response.data : error.message);
     throw new Error('Error updating user balance');
   }
 };
 
+
+
+
 const addTransactionToUser = async (userId, amount, cartItems) => {
   try {
     const transaction = {
-      type: 'debit',
+      type: 'tamcredits',
       amount,
       description: `Purchase of ${cartItems.map(item => item.name).join(', ')}`,
       orderId: generateOrderId()
@@ -296,6 +306,43 @@ const addTransactionToUser = async (userId, amount, cartItems) => {
     throw new Error('Error adding transaction to user');
   }
 };
+
+// Method to update product stock
+const updateProductStock = async (cartItems) => {
+  for (const item of cartItems) {
+    try {
+      const response = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+      
+      if (response.data && response.data.message === 'Success' && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        const product = response.data.data[0];
+        if (product.stock !== undefined) {
+          const currentStock = product.stock;
+          const updatedStock = currentStock - item.quantity;
+
+          await axios.patch(`https://alabites-api.vercel.app/products/${product._id}/stock`, { // Use product._id
+            stock: updatedStock
+          });
+
+          console.log(`Stock updated for Product ID: ${product._id}`);
+        } else {
+          console.error('Error updating stock: Stock property missing from response');
+        }
+      } else {
+        console.error('Error updating stock: Invalid or empty response from API');
+      }
+    } catch (error) {
+      console.error(`Error updating stock for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
+      if (error.response) {
+        console.error('Error details:', {
+          status: error.response.status,
+          headers: error.response.headers,
+          data: error.response.data,
+        });
+      }
+    }
+  }
+};
+
 
 // Method to generate order ID
 const generateOrderId = () => {
