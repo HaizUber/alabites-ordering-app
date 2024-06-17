@@ -5,6 +5,7 @@ import Header from './components/header'; // Corrected import path
 import StudentLoginPage from './pages/StudentLoginPage'; // Import the StudentLoginPage component
 import StudentRegisterPage from './pages/StudentRegisterPage'; // Import the StudentRegisterPage component
 import CheckoutPage from './components/checkout';
+import TopupPage from './components/topup';
 
 
 const App = () => {
@@ -58,6 +59,7 @@ const App = () => {
             path="/checkout"
             element={<CheckoutPage clearCart={clearCart}/>} // Pass clearCart and navigate as props
           />
+          <Route path="/topup" element={<TopupPage />} />
         </Routes>
       </div>
     </Router>
