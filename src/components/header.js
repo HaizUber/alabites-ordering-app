@@ -165,8 +165,7 @@ const Header = ({ cartItems, setCartItems }) => {
                     <span className="text-gray-600 text-sm">Loading...</span>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-full">
-                        <img className="rounded-full h-8 w-8 cursor-pointer" src={userAvatar} alt={`${username}'s avatar`} onClick={toggleDropdown} />
+                     
                         <div className="flex items-center gap-2 p-2 bg-gray-200 rounded-full">
                           <span className="text-gray-700 text-sm flex items-center gap-1">
                             <img className="h-5 w-8" src="/assets/tamcredits.png" alt="Tam Credits" />
@@ -178,6 +177,8 @@ const Header = ({ cartItems, setCartItems }) => {
                             </svg>
                           </Link>
                         </div>
+                        <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-full">
+                        <img className="rounded-full h-8 w-8 cursor-pointer" src={userAvatar} alt={`${username}'s avatar`} onClick={toggleDropdown} />
                       </div>
                       {isDropdownOpen && (
                         <div className="absolute right-0 top-2 mt-12 w-48 bg-white rounded-md shadow-lg py-2 z-50">
