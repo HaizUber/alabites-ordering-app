@@ -50,7 +50,7 @@ const Header = ({ cartItems, setCartItems }) => {
           const userData = response.data.data.find((userData) => userData.email === user.email);
           if (userData) {
             setUsername(userData.username);
-            setUserAvatar(userData.useravatar);
+            setUserAvatar(userData.studentavatar);
             setTamCredits(userData.currencyBalance);
           } else {
             setUsername('User');

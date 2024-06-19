@@ -6,6 +6,7 @@ import StudentLoginPage from './pages/StudentLoginPage'; // Import the StudentLo
 import StudentRegisterPage from './pages/StudentRegisterPage'; // Import the StudentRegisterPage component
 import CheckoutPage from './components/checkout';
 import TopupPage from './components/topup';
+import ProfilePage from './components/profile';
 
 
 const App = () => {
@@ -60,6 +61,7 @@ const App = () => {
             element={<CheckoutPage clearCart={clearCart}/>} // Pass clearCart and navigate as props
           />
           <Route path="/topup" element={<TopupPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>
