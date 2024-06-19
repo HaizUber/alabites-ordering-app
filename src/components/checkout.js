@@ -6,7 +6,6 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
-
 const CheckoutPage = ({ clearCart }) => {
   const location = useLocation();
   const { cartItems, subtotal, totalDiscount, totalPrice } = location.state || { cartItems: [], subtotal: 0, totalDiscount: 0, totalPrice: 0 };
@@ -18,205 +17,345 @@ const CheckoutPage = ({ clearCart }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-const [purchasedItems, setPurchasedItems] = useState([]);
-const navigate = useNavigate();
-const [cardholderName, setCardholderName] = useState('');
-const [isCardNameValid, setIsCardNameValid] = useState(false);
-const [paymentMethod, setPaymentMethod] = useState('card');
+  const [purchasedItems, setPurchasedItems] = useState([]);
+  const navigate = useNavigate();
+  const [cardholderName, setCardholderName] = useState('');
+  const [isCardNameValid, setIsCardNameValid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
 
-const handlePayment = async () => {
-  if (paymentMethod === 'card') {
-    // Check if any required fields are missing for card payment
-    if (!cardNumber || !expMonth || !expYear || !cvc || !cardholderName) {
-      const missingFields = [];
-      if (!cardNumber) missingFields.push('Card Number');
-      if (!expMonth) missingFields.push('Expiration Month');
-      if (!expYear) missingFields.push('Expiration Year');
-      if (!cvc) missingFields.push('Security Code');
-      if (!cardholderName) missingFields.push('Name on Card');
-
-      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-      return;
-    }
-  }
-
-  setIsLoading(true);
-  setError(null);
-  toast.info('Processing payment...');
-
-  const auth = getAuth();
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const userIdResponse = await axios.get(`https://alabites-api.vercel.app/users`);
-        const currentUser = userIdResponse.data.data.find((userData) => userData.email === user.email);
-        if (!currentUser) {
-          throw new Error('User not found');
-        }
+  const handlePayment = async () => {
+    // Validate required fields for card payment
+    if (paymentMethod === 'card') {
+      if (!cardNumber || !expMonth || !expYear || !cvc || !cardholderName) {
+        const missingFields = [];
+        if (!cardNumber) missingFields.push('Card Number');
+        if (!expMonth) missingFields.push('Expiration Month');
+        if (!expYear) missingFields.push('Expiration Year');
+        if (!cvc) missingFields.push('Security Code');
+        if (!cardholderName) missingFields.push('Name on Card');
         
-        const currentUserId = currentUser.uid;
-
-        if (paymentMethod === 'tamcredits') {
-          await handleTamCreditsPayment(currentUserId, cartItems);
-        } else {
-          const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
-
-          const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
-            data: {
-              attributes: {
-                type: 'card',
-                details: {
-                  card_number: cardNumber.replace(/\s+/g, ''), // Remove spaces from card number
-                  exp_month: parseInt(expMonth, 10),  // Ensure exp_month is an integer
-                  exp_year: parseInt(expYear, 10),    // Ensure exp_year is an integer
-                  cvc,
-                  billing: {  // Add billing details including cardholder's name
-                    name: cardholderName // Include the cardholder's name here
-                  }
+        toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+    }
+  
+    setIsLoading(true);
+    setError(null);
+    toast.info('Processing payment...');
+  
+    const auth = getAuth();
+  
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Retrieve current user details
+          const userIdResponse = await axios.get(`https://alabites-api.vercel.app/users`);
+          const currentUser = userIdResponse.data.data.find((userData) => userData.email === user.email);
+          if (!currentUser) {
+            throw new Error('User not found');
+          }
+          const currentUserId = currentUser.uid;
+  
+          // Handle TAMCredits payment
+          if (paymentMethod === 'tamcredits') {
+            await handleTamCreditsPayment(currentUserId, cartItems);
+          } else {
+            // Process card payment using PayMongo
+            const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
+  
+            // Create payment method
+            const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
+              data: {
+                attributes: {
+                  type: 'card',
+                  details: {
+                    card_number: cardNumber.replace(/\s+/g, ''), // Remove spaces from card number
+                    exp_month: parseInt(expMonth, 10),  // Ensure exp_month is an integer
+                    exp_year: parseInt(expYear, 10),    // Ensure exp_year is an integer
+                    cvc,
+                    billing: {
+                      name: cardholderName
+                    }
+                  },
                 },
               },
-            },
-          }, {
-            headers: {
-              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          const paymentMethodId = paymentMethodResponse.data.data.id;
-
-          const paymentIntentResponse = await axios.post('https://api.paymongo.com/v1/payment_intents', {
-            data: {
-              attributes: {
-                amount: totalPrice * 100, // Amount in centavos
-                payment_method_allowed: ['card'],
-                currency: 'PHP',
-                description: cartItems.map(item => item.name).join(', '),
-                statement_descriptor: 'Your Company Name',
-                capture_type: 'automatic',
-              },
-            },
-          }, {
-            headers: {
-              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          await axios.post(`https://api.paymongo.com/v1/payment_intents/${paymentIntentResponse.data.data.id}/attach`, {
-            data: {
-              attributes: {
-                payment_method: paymentMethodId,
-              },
-            },
-          }, {
-            headers: {
-              Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          for (const item of cartItems) {
-            try {
-              const response = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
-              
-              if (response.data && response.data.message === 'Success' && Array.isArray(response.data.data) && response.data.data.length > 0) {
-                const product = response.data.data[0];
-                if (product.stock !== undefined) {
-                  const currentStock = product.stock;
-                  const updatedStock = currentStock - item.quantity;
-  
-                  await axios.patch(`https://alabites-api.vercel.app/products/${item.id}/stock`, {
-                    stock: updatedStock
-                  });
-                } else {
-                  console.error('Error updating stock: Stock property missing from response');
-                }
-              } else {
-                console.error('Error updating stock: Invalid or empty response from API');
-              }
-            } catch (error) {
-              console.error(`Error updating stock for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
-            }
-          }
-
-          const generateOrderId = () => {
-            const prefix = "3000";
-            const randomDigits = Math.floor(100000 + Math.random() * 900000); // Generate 6 random digits
-            return prefix + randomDigits;
-          };
-          
-          const orderId = generateOrderId(); // Generate orderId
-          
-          const totalAmount = totalPrice; // Assuming totalPrice represents the total paid amount
-          
-          const transaction = {
-            type: 'debit',
-            amount: totalAmount,
-            description: `Purchase of ${cartItems.map(item => item.name).join(', ')}`,
-            orderId: orderId
-          };
-          
-          try {
-            const response = await axios.post(`https://alabites-api.vercel.app/users/${currentUserId}/transaction`, {
-              transaction
             }, {
               headers: {
-                'Content-Type': 'application/json'
-              }
+                Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+                'Content-Type': 'application/json',
+              },
             });
-          
-            console.log("Transaction response:", response.data);
-          } catch (error) {
-            console.error("Error sending transaction:", error);
+  
+            const paymentMethodId = paymentMethodResponse.data.data.id;
+  
+            // Create payment intent
+            const paymentIntentResponse = await axios.post('https://api.paymongo.com/v1/payment_intents', {
+              data: {
+                attributes: {
+                  amount: totalPrice * 100, // Amount in centavos
+                  payment_method_allowed: ['card'],
+                  currency: 'PHP',
+                  description: cartItems.map(item => item.name).join(', '),
+                  statement_descriptor: 'Your Company Name',
+                  capture_type: 'automatic',
+                },
+              },
+            }, {
+              headers: {
+                Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+                'Content-Type': 'application/json',
+              },
+            });
+  
+            // Attach payment method to payment intent
+            await axios.post(`https://api.paymongo.com/v1/payment_intents/${paymentIntentResponse.data.data.id}/attach`, {
+              data: {
+                attributes: {
+                  payment_method: paymentMethodId,
+                },
+              },
+            }, {
+              headers: {
+                Authorization: `Basic ${btoa(PAYMONGO_SECRET_KEY)}`,
+                'Content-Type': 'application/json',
+              },
+            });
+  
+            // Update product stock and prepare validCartItems
+            console.log('Updating product stock...');
+            const updatedCartItems = await Promise.all(cartItems.map(async (item) => {
+              try {
+                const productResponse = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+  
+                if (productResponse.data && productResponse.data.message === 'Success' && Array.isArray(productResponse.data.data) && productResponse.data.data.length > 0) {
+                  const product = productResponse.data.data[0];
+                  const productId = product._id;
+                  const storeId = product.store;
+  
+                  if (product.stock !== undefined) {
+                    const currentStock = product.stock;
+                    const updatedStock = currentStock - item.quantity;
+  
+                    await axios.patch(`https://alabites-api.vercel.app/products/${productId}/stock`, {
+                      stock: updatedStock
+                    });
+  
+                    return {
+                      ...item,
+                      productId: productId,
+                      store: storeId
+                    };
+                  } else {
+                    console.error('Error updating stock: Stock property missing from response');
+                    return null;
+                  }
+                } else {
+                  console.error('Error fetching product details:', productResponse.data ? productResponse.data.message : 'No response data');
+                  return null;
+                }
+              } catch (error) {
+                console.error(`Error updating stock for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
+                return null;
+              }
+            }));
+  
+            // Filter out items with null productId (errors occurred)
+            const validCartItems = updatedCartItems.filter(item => item !== null);
+  
+            // Generate order ID
+            const generateOrderId = () => {
+              const prefix = "3000";
+              const randomDigits = Math.floor(100000 + Math.random() * 900000);
+              return prefix + randomDigits;
+            };
+  
+            const orderId = generateOrderId();
+  
+            // Prepare transaction details
+            const transaction = {
+              type: 'debit',
+              amount: totalPrice,
+              description: `Purchase of ${validCartItems.map(item => item.name).join(', ')}`,
+              orderId: orderId
+            };
+  
+            // Send transaction details
+            console.log('Sending transaction details...');
+            try {
+              const response = await axios.post(`https://alabites-api.vercel.app/users/${currentUserId}/transaction`, {
+                transaction
+              }, {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+  
+              console.log("Transaction response:", response.data);
+            } catch (error) {
+              console.error("Error sending transaction:", error);
+            }
+  
+            // Create order payload with validCartItems and send order
+            const orderPayload = {
+              orderNumber: orderId,
+              customer: {
+                name: `${currentUser.firstName} ${currentUser.lastName}`,
+                email: currentUser.email,
+              },
+              items: validCartItems.map(item => ({
+                productId: item.productId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                store: item.store
+              })),
+              paymentDetails: {
+                method: 'card',
+                transactionId: paymentIntentResponse.data.data.id,
+                amount: totalPrice,
+              },
+              totalAmount: totalPrice,
+              orderStatus: 'Pending',
+              store: validCartItems.length > 0 ? validCartItems[0].store : '' // Assigning store at the order level
+            };
+  
+            // Create order
+            console.log('Creating order...');
+            try {
+              const orderResponse = await axios.post('https://alabites-api.vercel.app/orders', orderPayload, {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+  
+              console.log("Order response:", orderResponse.data);
+              toast.success('Payment successful!');
+              setShowModal(true);
+            } catch (error) {
+              console.error("Error creating order:", error);
+              setError(error.message);
+              toast.error('Payment failed. Please try again.');
+            }
           }
-
-          toast.success('Payment successful!');
-          setShowModal(true);
+        } catch (error) {
+          console.error("Error processing payment:", error);
+          setError(error.message);
+          toast.error('Payment failed. Please try again.');
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        setError(error.message);
-        toast.error('Payment failed. Please try again.');
-      } finally {
+      } else {
+        toast.error('User not authenticated');
         setIsLoading(false);
       }
-    } else {
-      toast.error('User not authenticated');
+    });
+  };
+  
+
+  const handleTamCreditsPayment = async (userId, cartItems) => {
+    try {
+      console.log('Handling payment with TamCredits for userId:', userId);
+  
+      // Fetch user's TamCredits balance
+      const tamCreditsBalance = await getUserTamCreditsBalance(userId);
+      console.log('TamCredits balance:', tamCreditsBalance);
+  
+      // Calculate total price in TamCredits
+      const totalPriceInTamCredits = calculateTotalPriceInTamCredits(cartItems);
+      console.log('Total price in TamCredits:', totalPriceInTamCredits);
+  
+      // Check if user has sufficient TamCredits balance
+      if (tamCreditsBalance < totalPriceInTamCredits) {
+        throw new Error('Insufficient TamCredits balance');
+      }
+  
+      // Deduct TamCredits from user's balance
+      await updateUserTamCreditsBalance(userId, totalPriceInTamCredits);
+  
+      // Add transaction record to user
+      const transactionOrderId = generateOrderId();
+      await addTransactionToUser(userId, totalPriceInTamCredits, cartItems, transactionOrderId);
+  
+      // Update product stock
+      await updateProductStock(cartItems);
+  
+      // Prepare order items with required fields
+      const orderItems = await Promise.all(cartItems.map(async (item) => {
+        try {
+          const productResponse = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+  
+          if (productResponse.data && productResponse.data.message === 'Success' && Array.isArray(productResponse.data.data) && productResponse.data.data.length > 0) {
+            const product = productResponse.data.data[0];
+            const productId = product._id;
+            const storeId = product.store;
+  
+            return {
+              productId: productId,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              store: storeId // Ensure store is included
+            };
+          } else {
+            console.error('Error fetching product details:', productResponse.data ? productResponse.data.message : 'No response data');
+            return null;
+          }
+        } catch (error) {
+          console.error(`Error fetching product details for Product ID: ${item.pid}`, error.response ? error.response.data : error.message);
+          return null;
+        }
+      }));
+  
+      // Filter out items with null productId (errors occurred)
+      const validOrderItems = orderItems.filter(item => item !== null);
+  
+      // Fetch current user details to get customer name and email
+      const userResponse = await axios.get(`https://alabites-api.vercel.app/users`);
+      const currentUser = userResponse.data.data.find((userData) => userData.uid === userId);
+  
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
+  
+      // Prepare order payload with customer details
+      const orderPayload = {
+        orderNumber: transactionOrderId,
+        customer: {
+          name: `${currentUser.firstName} ${currentUser.lastName}`, // Replace with actual customer name logic if needed
+          email: currentUser.email // Replace with actual customer email logic if needed
+        },
+        items: validOrderItems,
+        paymentDetails: {
+          method: 'tamcredits',
+          transactionId: transactionOrderId, // Use the same orderId for transactionId
+          amount: totalPriceInTamCredits
+        },
+        totalAmount: totalPriceInTamCredits,
+        orderStatus: 'Pending', // You can adjust the order status as needed
+        store: validOrderItems.length > 0 ? validOrderItems[0].store : '' // Assuming all items in cart are from the same store
+      };
+  
+      // Send order creation request
+      const orderResponse = await axios.post('https://alabites-api.vercel.app/orders', orderPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      console.log('Order created:', orderResponse.data);
+      toast.success('Payment with TamCredits successful!');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error handling payment with TamCredits:', error.response ? error.response.data : error.message);
+      toast.error('Payment with TamCredits failed. Please try again.');
+    } finally {
       setIsLoading(false);
     }
-  });
-};
-
-const handleTamCreditsPayment = async (userId, cartItems) => {
-  try {
-    console.log('Handling payment for userId:', userId);
-
-    const tamCreditsBalance = await getUserTamCreditsBalance(userId);
-    console.log('TamCredits balance:', tamCreditsBalance);
-
-    const totalPriceInTamCredits = calculateTotalPriceInTamCredits(cartItems);
-    console.log('Total price in TamCredits:', totalPriceInTamCredits);
-
-    if (tamCreditsBalance < totalPriceInTamCredits) {
-      throw new Error('Insufficient TamCredits balance');
-    }
-
-    await updateUserTamCreditsBalance(userId, totalPriceInTamCredits);
-
-    await addTransactionToUser(userId, totalPriceInTamCredits, cartItems);
-
-    await updateProductStock(cartItems);
-
-    toast.success('Payment with TamCredits successful!');
-    setShowModal(true);
-  } catch (error) {
-    console.error('Error spending TamCredits:', error.response ? error.response.data : error.message);
-    toast.error('Payment with TamCredits failed. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
+  
+  
+  
+  
 
 // Method to get user's TamCredits balance
 const getUserTamCreditsBalance = async (userId) => {
@@ -278,9 +417,6 @@ const updateUserTamCreditsBalance = async (userId, totalPrice) => {
     throw new Error('Error updating user balance');
   }
 };
-
-
-
 
 const addTransactionToUser = async (userId, amount, cartItems) => {
   try {

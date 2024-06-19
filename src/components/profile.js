@@ -56,11 +56,20 @@ const ProfilePage = () => {
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     setAvatarFile(file);
-
+  
     try {
       const storageRef = ref(storage, `user_avatar/${uid}_${file.name}`);
+  
+      // Check if there's an existing avatar to delete
+      if (user?.studentavatar) {
+        const oldAvatarRef = ref(storage, user.studentavatar);
+        await deleteObject(oldAvatarRef);
+      }
+  
+      // Upload the new avatar
       await uploadBytes(storageRef, file);
-
+  
+      // Get the download URL and set it as the avatarBase64
       const downloadURL = await getDownloadURL(storageRef);
       console.log('Download URL:', downloadURL);
       setAvatarBase64(downloadURL);
@@ -70,6 +79,7 @@ const ProfilePage = () => {
       toast.error('Error uploading image');
     }
   };
+  
 
   const handleSubmit = async (event) => {
     event.preventDefault();
