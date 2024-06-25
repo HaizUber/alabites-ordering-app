@@ -36,3 +36,12 @@
     transform: rotate(360deg);
   }
 }
+
+.transition-opacity {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.transition-transform {
+  transition: transform 0.3s ease-in-out;
+}
+
