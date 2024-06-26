@@ -92,7 +92,8 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             discount: product.discount,
             description: product.description,
             tags: product.tags,
-            photo: product.productPhotos[0]
+            photo: product.productPhotos[0],
+            store:product.store
         };
         addToCart(newItem);
         onClose();

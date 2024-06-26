@@ -1,0 +1,7 @@
+/* PaymentForm.css */
+input[type='text']:hover,
+select:hover,
+button:hover {
+  /* Example hover effect */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}

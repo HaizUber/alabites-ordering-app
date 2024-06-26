@@ -1,0 +1,13 @@
+/* OrderSummary.css */
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  .cart-item {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .cart-item:hover {
+    background-color: #f3f4f6; /* Change to desired hover color */
+  }

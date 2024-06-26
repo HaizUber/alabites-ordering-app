@@ -1,0 +1,22 @@
+/* CartModal.css */
+.cart-item {
+    opacity: 0; /* Initially hide cart items */
+    transition: opacity 0.5s ease-out; /* Smooth fade-in animation */
+  }
+  
+  .animate-slide-in {
+    opacity: 1; /* Show cart items with fade-in animation */
+    animation: slideIn 0.5s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(-20px); /* Slide in from left */
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
