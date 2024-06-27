@@ -122,36 +122,6 @@ const CheckoutPage = ({ clearCart }) => {
         await addTransactionToUser(userData.uid, totalPrice, orderId, cartItems, 'card');
       }
   
-      const orderPayload = {
-        orderNumber: orderId,
-        customer: {
-          name: `${userData.firstName} ${userData.lastName}`,
-          email: userData.email,
-        },
-        items: cartItems.map(item => ({
-          productId: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          store: item.store,
-        })),
-        paymentDetails: {
-          method: paymentMethod,
-          transactionId: paymentMethod === 'tamcredits' ? orderId : paymentIntentResponse.data.data.id,
-          amount: totalPrice,
-        },
-        totalAmount: totalPrice,
-        orderStatus: 'Pending',
-        store: cartItems.length > 0 ? cartItems[0].store : '',
-      };
-  
-      const orderResponse = await axios.post('https://alabites-api.vercel.app/orders', orderPayload, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-  
-      console.log("Order response:", orderResponse.data);
       toast.success('Payment successful!');
       setShowModal(true);
   

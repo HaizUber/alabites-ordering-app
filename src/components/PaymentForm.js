@@ -51,44 +51,46 @@ const PaymentForm = ({ paymentMethod, setPaymentMethod, handlePayment, isLoading
     const today = new Date();
     const enteredDate = new Date(`${cardDetails.expYear}-${cardDetails.expMonth}-01`);
 
-    // Check if all fields are filled out
-    Object.keys(cardDetails).forEach(key => {
-      if (cardDetails[key] === '') {
+    // Check if all fields are filled out (only if payment method is 'card')
+    if (paymentMethod === 'card') {
+      Object.keys(cardDetails).forEach(key => {
+        if (cardDetails[key] === '') {
+          setErrors(prevErrors => ({
+            ...prevErrors,
+            [key]: `${key === 'cardNumber' ? 'Card number' : key} is required`
+          }));
+          valid = false;
+        }
+      });
+
+      // Validate expiration date (only if payment method is 'card')
+      if (enteredDate < today) {
         setErrors(prevErrors => ({
           ...prevErrors,
-          [key]: `${key === 'cardNumber' ? 'Card number' : key} is required`
+          expDate: 'Expiration date must be in the future'
         }));
         valid = false;
       }
-    });
 
-    // Validate expiration date
-    if (enteredDate < today) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        expDate: 'Expiration date must be in the future'
-      }));
-      valid = false;
-    }
+      // Validate card number (simple validation, adjust as per your needs)
+      const cardNumberPattern = /^\d{16}$/;
+      if (!cardNumberPattern.test(cardDetails.cardNumber)) {
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          cardNumber: 'Invalid card number'
+        }));
+        valid = false;
+      }
 
-    // Validate card number (simple validation, adjust as per your needs)
-    const cardNumberPattern = /^\d{16}$/;
-    if (!cardNumberPattern.test(cardDetails.cardNumber)) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        cardNumber: 'Invalid card number'
-      }));
-      valid = false;
-    }
-
-    // Validate CVC (simple validation, adjust as per your needs)
-    const cvcPattern = /^\d{3}$/;
-    if (!cvcPattern.test(cardDetails.cvc)) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        cvc: 'Invalid CVC'
-      }));
-      valid = false;
+      // Validate CVC (simple validation, adjust as per your needs)
+      const cvcPattern = /^\d{3}$/;
+      if (!cvcPattern.test(cardDetails.cvc)) {
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          cvc: 'Invalid CVC'
+        }));
+        valid = false;
+      }
     }
 
     return valid;
@@ -96,7 +98,7 @@ const PaymentForm = ({ paymentMethod, setPaymentMethod, handlePayment, isLoading
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validate form before submitting
     if (validateForm()) {
       handlePayment(cardDetails);

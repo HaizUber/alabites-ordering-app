@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { toast } from 'react-toastify';
+import TransactionHistory from './TransactionHistory';
+import PendingOrders from './PendingOrders';
+import { FaEdit, FaTrash } from 'react-icons/fa';
+import { motion } from 'framer-motion'; // Import motion from framer-motion
 
-const apiUrl = 'https://alabites-api.vercel.app/users';
+const apiUrl = 'https://alabites-api.vercel.app';
+const usersUrl = `${apiUrl}/users`;
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
-  const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formState, setFormState] = useState({
@@ -19,45 +23,83 @@ const ProfilePage = () => {
     avatarBase64: null,
   });
   const [submitting, setSubmitting] = useState(false);
-
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [transactionHistory, setTransactionHistory] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterOption, setFilterOption] = useState('recent'); // 'recent' or 'oldest'
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
   const storage = getStorage();
 
   useEffect(() => {
     const auth = getAuth();
-    onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          const userIdResponse = await axios.get(apiUrl);
-          const userDataArray = userIdResponse.data.data;
-          const currentUserData = Array.isArray(userDataArray)
-            ? userDataArray.find((userData) => userData.email === currentUser.email)
-            : null;
-          if (!currentUserData) throw new Error('User not found');
-          setUid(currentUserData.uid);
-          setUser(currentUserData);
-        } catch (error) {
-          console.error('Error fetching user details:', error);
-        } finally {
+    const fetchUserDetails = async () => {
+      onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+          try {
+            const userIdResponse = await axios.get(usersUrl);
+            const userDataArray = userIdResponse.data.data;
+            const currentUserData = Array.isArray(userDataArray)
+              ? userDataArray.find((userData) => userData.email === currentUser.email)
+              : null;
+            if (!currentUserData) throw new Error('User not found');
+            setUser(currentUserData);
+            setFormState({
+              firstName: currentUserData.firstName,
+              lastName: currentUserData.lastName,
+              username: currentUserData.username,
+              avatarBase64: currentUserData.studentavatar,
+            });
+            setTransactionHistory(currentUserData.transactionHistory || []);
+            fetchPendingOrders(currentUserData.email);
+          } catch (error) {
+            console.error('Error fetching user details:', error);
+            toast.error('Failed to fetch user details');
+          } finally {
+            setLoading(false);
+          }
+        } else {
           setLoading(false);
         }
-      } else {
-        setLoading(false);
-      }
-    });
+      });
+    };
+    fetchUserDetails();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      setFormState({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        avatarBase64: user.studentavatar,
-      });
-    }
-  }, [user]);
+  const fetchPendingOrders = useCallback(async (email) => {
+    try {
+      const response = await axios.get(`${apiUrl}/orders`);
+      let orders = response.data || [];
 
-  const handleFileChange = async (event) => {
+      // Apply search filter
+      let filteredOrders = orders.filter(order => order.customer.email === email && order.orderStatus === 'Pending');
+      if (searchTerm) {
+        filteredOrders = filteredOrders.filter(order =>
+          order.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      }
+
+      // Apply sort filter
+      if (filterOption === 'recent') {
+        filteredOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (filterOption === 'oldest') {
+        filteredOrders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      }
+
+      setPendingOrders(filteredOrders);
+    } catch (error) {
+      console.error('Error fetching pending orders:', error);
+      toast.error('Failed to fetch pending orders');
+    }
+  }, [searchTerm, filterOption]);
+
+  const refreshPendingOrders = useCallback(() => {
+    if (user && user.email) {
+      fetchPendingOrders(user.email);
+    }
+  }, [fetchPendingOrders, user]);
+  
+
+  const handleFileChange = useCallback(async (event) => {
     const file = event.target.files[0];
     setFormState((prevState) => ({
       ...prevState,
@@ -65,15 +107,18 @@ const ProfilePage = () => {
     }));
 
     try {
-      const storageRef = ref(storage, `user_avatar/${uid}_${file.name}`);
+      const storageRef = ref(storage, `user_avatar/${user.uid}_${file.name}`);
 
+      // Delete previous avatar if exists
       if (user?.studentavatar) {
         const oldAvatarRef = ref(storage, user.studentavatar);
         await deleteObject(oldAvatarRef);
       }
 
+      // Upload new avatar
       await uploadBytes(storageRef, file);
 
+      // Get download URL and update state
       const downloadURL = await getDownloadURL(storageRef);
       setFormState((prevState) => ({
         ...prevState,
@@ -84,28 +129,36 @@ const ProfilePage = () => {
       console.error('Error uploading image:', error);
       toast.error('Error uploading image');
     }
-  };
+  }, [storage, user]);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
+
+    // Basic form validation
+    if (!formState.firstName || !formState.lastName || !formState.username) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
 
     try {
       setSubmitting(true);
       let updatedAvatar = formState.avatarBase64;
 
+      // Upload avatar if a new file is selected
       if (formState.avatarFile) {
-        const storageRef = ref(storage, `user_avatar/${uid}_${formState.avatarFile.name}`);
+        const storageRef = ref(storage, `user_avatar/${user.uid}_${formState.avatarFile.name}`);
         await uploadBytes(storageRef, formState.avatarFile);
         updatedAvatar = await getDownloadURL(storageRef);
       }
 
+      // Update user info
       const updatedUserInfo = {
         ...user,
         ...formState,
         studentavatar: updatedAvatar,
       };
 
-      const response = await axios.put(`${apiUrl}/${user.uid}`, updatedUserInfo);
+      const response = await axios.put(`${apiUrl}/users/${user.uid}`, updatedUserInfo);
       if (response.status === 200) {
         toast.success('Profile updated successfully');
         setUser(updatedUserInfo);
@@ -119,16 +172,18 @@ const ProfilePage = () => {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [storage, user, formState]);
 
-  const handleDeleteAvatar = async () => {
+  const handleDeleteAvatar = useCallback(async () => {
     if (user?.studentavatar) {
       const avatarRef = ref(storage, user.studentavatar);
       try {
+        // Delete avatar from storage
         await deleteObject(avatarRef);
 
+        // Update user info without avatar
         const updatedUser = { ...user, studentavatar: null };
-        const response = await axios.put(`${apiUrl}/${user.uid}`, updatedUser);
+        const response = await axios.put(`${apiUrl}/users/${user.uid}`, updatedUser);
 
         if (response.status === 200) {
           setFormState((prevState) => ({
@@ -145,7 +200,7 @@ const ProfilePage = () => {
         toast.error('Error deleting avatar');
       }
     }
-  };
+  }, [storage, user]);
 
   const openModal = () => {
     setShowModal(true);
@@ -153,147 +208,169 @@ const ProfilePage = () => {
 
   const closeModal = () => {
     setShowModal(false);
+    setDeleteConfirmation(false); // Reset delete confirmation state on modal close
+  };
+
+  const handleDeleteConfirmation = () => {
+    setDeleteConfirmation(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    await handleDeleteAvatar();
+    setDeleteConfirmation(false);
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen animate-pulse">Loading...</div>;
-  }
-
-  if (!user) {
-    return <div className="flex items-center justify-center h-screen">User not found</div>;
+    return <div className="loader">Loading...</div>; // Add a loader while fetching user data
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
-      <div className="bg-white shadow-lg rounded-lg p-6 md:w-2/3 lg:w-1/2 w-full fade-in animate-fadeIn">
-        <UserProfile user={user} />
-        <TamcreditsBalance balance={user.currencyBalance} />
-        <TransactionHistory transactions={user.transactionHistory} />
-        <EditProfileButton openModal={openModal} />
-      </div>
-
-      {showModal && (
-        <ProfileModal
-          formState={formState}
-          setFormState={setFormState}
-          handleFileChange={handleFileChange}
-          handleSubmit={handleSubmit}
-          closeModal={closeModal}
-          submitting={submitting}
+    <div className="container mx-auto p-4">
+      <div className="bg-white shadow-md rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Profile Page</h2>
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
+            onClick={openModal}
+          >
+            Edit Profile <FaEdit className="inline ml-2" />
+          </button>
+        </div>
+        <div className="flex items-center space-x-4">
+          {formState.avatarBase64 && (
+            <img src={formState.avatarBase64} alt="User Avatar" className="w-24 h-24 rounded-full object-cover" />
+          )}
+          <div>
+            <h3 className="text-xl font-bold">
+              {user?.firstName} {user?.lastName}
+            </h3>
+            <p className="text-gray-600">@{user?.username}</p>
+          </div>
+        </div>
+        <PendingOrders
+          pendingOrders={pendingOrders}
+          searchTerm={searchTerm}
+          filterOption={filterOption}
+          onRefresh={refreshPendingOrders}
+          setSearchTerm={setSearchTerm} // Pass setSearchTerm as prop
+          setFilterOption={setFilterOption} // Pass setFilterOption as prop
         />
+      </div>
+      <div className="mt-4">
+        <TransactionHistory
+          transactions={transactionHistory}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterOption={filterOption}
+          setFilterOption={setFilterOption}
+        />
+      </div>
+      {showModal && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          transition={{ duration: 0.3 }}
+          className="modal fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+        >
+          <div className="modal-content bg-white p-4 rounded-lg w-3/4 md:w-1/2 lg:w-1/3">
+            <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1">First Name:</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-2 py-1"
+                  value={formState.firstName}
+                  onChange={(e) =>
+                    setFormState((prevState) => ({ ...prevState, firstName: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1">Last Name:</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-2 py-1"
+                  value={formState.lastName}
+                  onChange={(e) =>
+                    setFormState((prevState) => ({ ...prevState, lastName: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1">Username:</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-2 py-1"
+                  value={formState.username}
+                  onChange={(e) =>
+                    setFormState((prevState) => ({ ...prevState, username: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1">Avatar:</label>
+                <input type="file" onChange={handleFileChange} />
+                {formState.avatarBase64 && (
+                  <div className="mt-2 flex items-center">
+                    <img src={formState.avatarBase64} alt="Avatar Preview" className="w-16 h-16 rounded-full object-cover" />
+                    <button
+                      type="button"
+                      className="ml-4 text-red-500 hover:underline"
+                      onClick={handleDeleteConfirmation}
+                    >
+                      <FaTrash className="inline mr-1" /> Delete Avatar
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 transition duration-300"
+                  onClick={closeModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
+                  disabled={submitting}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+            {deleteConfirmation && (
+              <div className="mt-4 p-4 bg-red-100 rounded">
+                <p className="text-red-700">Are you sure you want to delete your avatar?</p>
+                <div className="flex justify-end space-x-2 mt-2">
+                  <button
+                    type="button"
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 transition duration-300"
+                    onClick={() => setDeleteConfirmation(false)}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300"
+                    onClick={handleConfirmDelete}
+                    disabled={submitting}
+                  >
+                    Confirm Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
       )}
     </div>
   );
 };
-
-const UserProfile = ({ user }) => (
-  <div className="flex flex-col items-center">
-    <img
-      src={user.studentavatar ? user.studentavatar : 'https://via.placeholder.com/150'}
-      alt="User Avatar"
-      className="rounded-full w-32 h-32 mb-4"
-    />
-    <h2 className="text-2xl font-semibold">{user.firstName} {user.lastName}</h2>
-    <p className="text-gray-600">@{user.username}</p>
-    <p className="text-gray-600">Student Number: {user.studentNumber}</p>
-  </div>
-);
-
-const TamcreditsBalance = ({ balance }) => (
-  <div className="mt-6">
-    <h3 className="text-xl font-semibold mb-4">Tamcredits Balance</h3>
-    <div className="bg-blue-100 p-4 rounded-lg text-center">
-      <span className="text-3xl font-bold text-blue-600">{balance}</span>
-    </div>
-  </div>
-);
-
-const TransactionHistory = ({ transactions }) => (
-  <div className="mt-6">
-    <h3 className="text-xl font-semibold mb-4">Transaction History</h3>
-    <ul className="space-y-4">
-      {transactions.map((transaction) => (
-        <li key={transaction._id} className="bg-gray-200 p-4 rounded-lg flex justify-between">
-          <span>{transaction.description || 'No Description'}</span>
-          <span>{transaction.type === 'tamcredits' ? '+' : '-'}${transaction.amount}</span>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
-const EditProfileButton = ({ openModal }) => (
-  <button
-    onClick={openModal}
-    className="mt-4 w-full p-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300 ease-in-out"
-  >
-    Edit Profile
-  </button>
-);
-
-const ProfileModal = ({
-  formState, setFormState, handleFileChange, handleSubmit, closeModal, submitting,
-}) => (
-  <div className="fixed inset-0 flex items-center justify-center z-50">
-    <div className="absolute inset-0 bg-gray-900 opacity-75" onClick={closeModal}></div>
-    <div className="bg-white rounded-lg overflow-hidden shadow-xl z-50 max-w-md w-full p-6 animate-slideInUp">
-      <h2 className="text-2xl font-semibold mb-4">Edit Profile</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <TextInput
-          label="First Name"
-          value={formState.firstName}
-          onChange={(e) => setFormState({ ...formState, firstName: e.target.value })}
-        />
-        <TextInput
-          label="Last Name"
-          value={formState.lastName}
-          onChange={(e) => setFormState({ ...formState, lastName: e.target.value })}
-        />
-        <TextInput
-          label="Username"
-          value={formState.username}
-          onChange={(e) => setFormState({ ...formState, username: e.target.value })}
-        />
-        <FileInput label="Avatar" onChange={handleFileChange} />
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="mr-4 px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 ease-in-out"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className={`px-4 py-2 bg-blue-600 text-white rounded-md transition duration-300 ease-in-out ${submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
-            disabled={submitting}
-          >
-            {submitting ? 'Updating...' : 'Update Profile'}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-);
-
-const TextInput = ({ label, value, onChange }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700">{label}</label>
-    <input
-      type="text"
-      value={value}
-      onChange={onChange}
-      className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-    />
-  </div>
-);
-
-const FileInput = ({ label, onChange }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700">{label}</label>
-    <input type="file" onChange={onChange} className="mt-1 block w-full" />
-  </div>
-);
 
 export default ProfilePage;

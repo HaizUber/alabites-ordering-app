@@ -39,10 +39,25 @@ export const addTransactionToUser = async (userId, amount, orderId, cartItems, p
   }
 
   const transactionOrderId = orderId || generateOrderId(); // Use provided orderId or generate a new one
+
+  let transactionType;
+  let transactionDescription;
+
+  // Determine transaction type and description based on payment method
+  if (paymentMethod === 'tamcredits') {
+    transactionType = 'tamcredits';
+    transactionDescription = `Purchase with TamCredits: ${cartItems.map(item => item.name).join(', ')}`;
+  } else if (paymentMethod === 'card') {
+    transactionType = 'card';
+    transactionDescription = `Purchase with Card: ${cartItems.map(item => item.name).join(', ')}`;
+  } else {
+    throw new Error('Unsupported payment method');
+  }
+
   const transaction = {
-    type: paymentMethod === 'tamcredits' ? 'tamcredits' : 'card', // Adjust type based on the payment method used
+    type: transactionType,
     amount,
-    description: `Purchase of ${cartItems.map(item => item.name).join(', ')}`,
+    description: transactionDescription,
     orderId: transactionOrderId,
   };
 
@@ -103,9 +118,6 @@ export const updateProductStock = async (cartItems) => {
     throw error;
   }
 };
-
-
-
 
 // Method to handle payment using TamCredits
 export const handleTamCreditsPayment = async (currentUser, cartItems) => {
