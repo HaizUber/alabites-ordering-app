@@ -106,14 +106,18 @@ const Header = ({ cartItems, setCartItems }) => {
   };
 
   const navItems = useMemo(() => (
-    ['Home', 'About', 'Contact', 'Help Center', 'Profile'].map((item) => (
-      <li key={item}>
-        <Link className="text-gray-500 transition hover:text-gray-700" to={`/${item.toLowerCase().replace(' ', '-')}`}>
-          {item}
-        </Link>
-      </li>
-    ))
+    ['Home', 'About', 'Help Center'].map((item) => {
+      const link = item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`;
+      return (
+        <li key={item}>
+          <Link className="text-gray-500 transition hover:text-gray-700" to={link}>
+            {item}
+          </Link>
+        </li>
+      );
+    })
   ), []);
+  
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, username }}>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
-import Header from './components/header'; // Corrected import path
+import Header from './components/header'; 
 import StudentLoginPage from './pages/StudentLoginPage'; // Import the StudentLoginPage component
 import StudentRegisterPage from './pages/StudentRegisterPage'; // Import the StudentRegisterPage component
 import CheckoutPage from './components/checkout';
 import TopupPage from './components/topup';
 import ProfilePage from './components/profile';
+import HelpCenter from './components/HelpCenter';
+import AboutUs from './components/AboutUs';
 
 
 const App = () => {
@@ -62,7 +64,10 @@ const App = () => {
           />
           <Route path="/topup" element={<TopupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/about" element={<AboutUs />} />
         </Routes>
+        
       </div>
     </Router>
   );

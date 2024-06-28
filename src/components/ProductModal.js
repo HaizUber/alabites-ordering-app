@@ -5,6 +5,8 @@ import axios from 'axios';
 import api from './api';
 import ProductDetails from './ProductDetails';
 import Reviews from './Reviews';
+import LazyLoad from 'react-lazyload';
+import { motion } from 'framer-motion';
 
 const ProductModal = ({ product, onClose, addToCart }) => {
     const [quantity, setQuantity] = useState(1);
@@ -14,6 +16,9 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     const [reviewText, setReviewText] = useState('');
     const [rating, setRating] = useState(0);
     const [userId, setUserId] = useState(null);
+    const [productPhotos, setProductPhotos] = useState(product.productPhotos);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+    const [insufficientStock, setInsufficientStock] = useState(false);
 
     const auth = getAuth();
 
@@ -39,7 +44,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             setUserId(currentUser._id);
         } catch (error) {
             console.error('Error fetching user ID:', error);
-            toast.error('Failed to fetch user ID');
+            toast.error('Failed to fetch user ID. Please try again later.');
         }
     };
 
@@ -50,7 +55,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             setReviews(response.data);
         } catch (error) {
             console.error('Error fetching reviews:', error);
-            toast.error('Failed to fetch reviews');
+            toast.error('Failed to fetch reviews. Please try again later.');
         } finally {
             setLoadingReviews(false);
         }
@@ -72,7 +77,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             fetchReviews();
         } catch (error) {
             console.error('Error adding review:', error);
-            toast.error('Failed to add review');
+            toast.error('Failed to add review. Please try again later.');
         }
     };
 
@@ -83,6 +88,12 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     }, [activeTab, product._id]);
 
     const handleAddToCart = () => {
+        if (product.stock < quantity || product.stock === 0) {
+            setInsufficientStock(true);
+            toast.error('Insufficient stock to add to cart.');
+            return;
+        }
+
         const newItem = {
             id: product._id,
             pid: product.pid,
@@ -92,8 +103,8 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             discount: product.discount,
             description: product.description,
             tags: product.tags,
-            photo: product.productPhotos[0],
-            store:product.store
+            photo: productPhotos[selectedPhotoIndex],
+            store: product.store
         };
         addToCart(newItem);
         onClose();
@@ -102,11 +113,13 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     const decrementQuantity = () => {
         if (quantity > 1) {
             setQuantity(quantity - 1);
+            setInsufficientStock(false); // Reset insufficient stock indicator when quantity changes
         }
     };
 
     const incrementQuantity = () => {
         setQuantity(quantity + 1);
+        setInsufficientStock(false); // Reset insufficient stock indicator when quantity changes
     };
 
     return (
@@ -123,15 +136,15 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                                 <h2 className="text-sm title-font text-gray-500 tracking-widest">{product.store}</h2>
                                 <h1 className="text-gray-900 text-3xl title-font font-medium mb-4">{product.name}</h1>
                                 <div className="flex mb-4">
-                                    <a 
-                                        href="#" 
+                                    <a
+                                        href="#"
                                         className={`flex-grow py-2 text-lg px-1 ${activeTab === 'description' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'border-b-2 border-gray-300'}`}
                                         onClick={() => setActiveTab('description')}
                                     >
                                         Description
                                     </a>
-                                    <a 
-                                        href="#" 
+                                    <a
+                                        href="#"
                                         className={`flex-grow py-2 text-lg px-1 ${activeTab === 'reviews' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'border-b-2 border-gray-300'}`}
                                         onClick={() => setActiveTab('reviews')}
                                     >
@@ -139,7 +152,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                                     </a>
                                 </div>
                                 {activeTab === 'description' && (
-                                    <ProductDetails 
+                                    <ProductDetails
                                         product={product}
                                         quantity={quantity}
                                         decrementQuantity={decrementQuantity}
@@ -159,12 +172,54 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                                         handleAddReview={handleAddReview}
                                     />
                                 )}
+                                {insufficientStock && (
+                                    <p className="text-red-500 mt-2">Insufficient stock to add to cart.</p>
+                                )}
                             </div>
-                            <img alt="ecommerce" className="lg:w-1/2 w-full lg:h-auto h-64 object-cover object-center rounded transition-transform duration-500" src={product.productPhotos[0]} />
+                            <div className="lg:w-1/2 w-full lg:h-auto">
+                                <div className="flex justify-center items-center h-full">
+                                    <div className="max-w-full">
+                                        <LazyLoad height={400} once>
+                                            <motion.img
+                                                alt={`Product Photo`}
+                                                className="w-full h-auto object-contain rounded-lg"
+                                                src={productPhotos[selectedPhotoIndex]}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.5 }}
+                                            />
+                                        </LazyLoad>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 mt-4">
+                                    {productPhotos.map((photo, index) => (
+                                        <motion.div
+                                            key={index}
+                                            className={`relative overflow-hidden rounded-lg cursor-pointer transform transition-transform duration-300 hover:scale-105 ${index === selectedPhotoIndex ? 'border-2 border-indigo-500' : ''}`}
+                                            onClick={() => setSelectedPhotoIndex(index)}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <LazyLoad height={100} once>
+                                                <img
+                                                    alt={`Product Photo ${index + 1}`}
+                                                    className="w-full h-full object-cover rounded"
+                                                    src={photo}
+                                                />
+                                            </LazyLoad>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button onClick={onClose} type="button" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-transform duration-300">
+                        <button
+                            onClick={onClose}
+                            type="button"
+                            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-transform duration-300"
+                        >
                             Close
                         </button>
                     </div>

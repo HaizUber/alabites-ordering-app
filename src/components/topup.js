@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import from Firebase auth
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { motion } from 'framer-motion'; // Import framer-motion
+
 
 const TopupPage = () => {
   const [uid, setUid] = useState('');
@@ -54,7 +56,6 @@ const TopupPage = () => {
     try {
       const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
 
-      // Validate required fields
       if (!cardNumber || !expMonth || !expYear || !cvc || !cardholderName) {
         const missingFields = [];
         if (!cardNumber) missingFields.push('Card Number');
@@ -68,7 +69,6 @@ const TopupPage = () => {
         return;
       }
 
-      // Create payment method
       const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
         data: {
           attributes: {
@@ -91,7 +91,6 @@ const TopupPage = () => {
 
       const paymentMethodId = paymentMethodResponse.data.data.id;
 
-      // Create payment intent
       const paymentIntentResponse = await axios.post('https://api.paymongo.com/v1/payment_intents', {
         data: {
           attributes: {
@@ -112,7 +111,6 @@ const TopupPage = () => {
 
       const paymentIntentId = paymentIntentResponse.data.data.id;
 
-      // Attach payment method to payment intent
       await axios.post(`https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`, {
         data: {
           attributes: { payment_method: paymentMethodId },
@@ -155,11 +153,20 @@ const TopupPage = () => {
   };
 
   return (
-    <section className="text-gray-600 body-font bg-gray-50 min-h-screen flex justify-center items-center">
+    <motion.section
+      className="text-gray-600 body-font bg-gray-50 min-h-screen flex justify-center items-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="container px-5 py-24 mx-auto">
-        <div className="flex flex-wrap -m-4 text-center">
+        <motion.div className="flex flex-wrap -m-4 text-center">
           {predefinedAmounts.map((predefinedAmount) => (
-            <div key={predefinedAmount} className="p-4 sm:w-1/2 lg:w-1/3 w-full transform transition hover:scale-105 duration-500">
+            <motion.div
+              key={predefinedAmount}
+              className="p-4 sm:w-1/2 lg:w-1/3 w-full transform transition hover:scale-105 duration-500"
+              whileHover={{ scale: 1.05 }}
+            >
               <div className="rounded-lg bg-white shadow-indigo-50 shadow-md">
                 <div className="p-4">
                   <h2 className="text-gray-900 text-lg font-bold">Top Up Amount</h2>
@@ -174,14 +181,18 @@ const TopupPage = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         <ToastContainer />
 
         {confirmAmount && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 transition-opacity">
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 transition-opacity"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <h3 className="text-lg font-bold mb-4">Confirm Amount</h3>
               <p className="mb-4">You are about to top up {selectedPredefinedAmount || amount} PHP.</p>
@@ -200,58 +211,84 @@ const TopupPage = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {showModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 transition-opacity">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-lg font-bold mb-4">Checkout via <img src="https://th.bing.com/th/id/OIP.l-TAh-Y3NhgW26fiLmk-gAAAAA?rs=1&pid=ImgDetMain" alt="Paymongo" className="h-6 ml-3 inline-block"/></h3>
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 transition-opacity"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">
+                Checkout via{' '}
+                <img
+                  src="https://th.bing.com/th/id/OIP.l-TAh-Y3NhgW26fiLmk-gAAAAA?rs=1&pid=ImgDetMain"
+                  alt="Paymongo"
+                  className="h-6 ml-3 inline-block"
+                />
+              </h3>
               <div>
-                <label className="block mb-2">Card Number</label>
+                <label className="block mb-2" htmlFor="cardNumber">Card Number</label>
                 <input
+                  id="cardNumber"
                   type="text"
                   value={cardNumber}
+                  placeholder="4444 4444 4444 4444"
                   onChange={(e) => setCardNumber(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                  aria-label="Card Number"
                 />
               </div>
               <div className="mt-4 flex justify-between">
                 <div className="w-1/2 pr-2">
-                  <label className="block mb-2">Expiry Month</label>
+                  <label className="block mb-2" htmlFor="expMonth">Expiry Month</label>
                   <input
+                    id="expMonth"
                     type="text"
                     value={expMonth}
+                    placeholder="12"
                     onChange={(e) => setExpMonth(e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                    aria-label="Expiry Month"
                   />
                 </div>
                 <div className="w-1/2 pl-2">
-                  <label className="block mb-2">Expiry Year</label>
+                  <label className="block mb-2" htmlFor="expYear">Expiry Year</label>
                   <input
+                    id="expYear"
                     type="text"
                     value={expYear}
+                    placeholder="24"
                     onChange={(e) => setExpYear(e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                    aria-label="Expiry Year"
                   />
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block mb-2">CVC</label>
+                <label className="block mb-2" htmlFor="cvc">CVC</label>
                 <input
+                  id="cvc"
                   type="text"
                   value={cvc}
+                  placeholder="123"
                   onChange={(e) => setCvc(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                  aria-label="CVC"
                 />
               </div>
               <div className="mt-4">
-                <label className="block mb-2">Cardholder Name</label>
+                <label className="block mb-2" htmlFor="cardholderName">Cardholder Name</label>
                 <input
+                  id="cardholderName"
                   type="text"
                   value={cardholderName}
+                  placeholder="John Smith"
                   onChange={(e) => setCardholderName(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                  aria-label="Cardholder Name"
                 />
               </div>
               <div className="mt-4 flex justify-end">
@@ -275,13 +312,13 @@ const TopupPage = () => {
                   <p>{error}</p>
                 </div>
               )}
+              
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 };
 
 export default TopupPage;
-

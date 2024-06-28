@@ -62,8 +62,6 @@ const LandingPage = ({ cartItems, setCartItems }) => {
   
     fetchData();
   }, []);
-  
-  
 
   useEffect(() => {
     applyFilters();
@@ -138,11 +136,19 @@ const LandingPage = ({ cartItems, setCartItems }) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-2xl">Loading...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-2xl text-red-600">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -150,18 +156,18 @@ const LandingPage = ({ cartItems, setCartItems }) => {
       <div className="absolute inset-0 bg-white/75 sm:bg-transparent sm:from-white/95 sm:to-white/25 ltr:sm:bg-gradient-to-r rtl:sm:bg-gradient-to-l blur" style={{ backdropFilter: 'blur(1px)' }}></div>
       <div className="relative mx-auto max-w-screen-xl px-4 py-32 sm:px-6 lg:flex lg:h-screen lg:items-center lg:px-8" style={{ height: '50vh' }}>
         <div className="max-w-xl text-center ltr:sm:text-left rtl:sm:text-right">
-          <h1 className="text-3xl font-extrabold sm:text-5xl">
+          <h1 className="text-3xl font-extrabold sm:text-5xl text-gray-900">
             Satisfy your cravings
             <strong className="block font-extrabold text-green-800"> with Alabites. </strong>
           </h1>
-          <p className="mt-4 max-w-lg sm:text-xl/relaxed">
-            Ordering your favorite R2K, Chef In Action, Graciously Food Cravings has never been faster only here on Alabites
+          <p className="mt-4 max-w-lg sm:text-xl text-gray-700">
+            Ordering your favorite meals has never been faster - only here on Alabites.
           </p>
-          <div className="mt-8 flex flex-wrap gap-4 text-center">
-            <a href="#" className="block w-full rounded bg-green-800 px-12 py-3 text-sm font-medium text-white shadow hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto">
+          <div className="mt-8 flex flex-wrap gap-4 justify-center">
+            <a href="#" className="block w-full rounded bg-green-800 px-8 py-3 text-sm font-medium text-white shadow-lg hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto">
               Get Started
             </a>
-            <a href="#" className="block w-full rounded bg-white px-12 py-3 text-sm font-medium text-green-800 shadow hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto">
+            <a href="#" className="block w-full rounded bg-white px-8 py-3 text-sm font-medium text-green-800 shadow-lg hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto mt-4 sm:mt-0">
               Learn More
             </a>
           </div>
@@ -170,8 +176,8 @@ const LandingPage = ({ cartItems, setCartItems }) => {
 
       <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <header>
-          <h2 className="text-xl font-bold text-gray-900 sm:text-3xl">Menu</h2>
-          <p className="mt-4 max-w-md text-gray-500">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Menu</h2>
+          <p className="mt-4 max-w-md text-gray-700">
             Explore our vast menu of delicious food!
           </p>
         </header>
@@ -179,7 +185,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
         <div className="mt-8 block lg:hidden">
           <button
             onClick={toggleFilters}
-            className="flex cursor-pointer items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600"
+            className="flex items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600 focus:outline-none"
           >
             <span className="text-sm font-medium">Filters & Sorting</span>
             <svg
@@ -188,7 +194,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              className={`size-4 ${showFilters ? 'rtl:rotate-180' : ''}`}
+              className={`h-4 w-4 ${showFilters ? 'transform rotate-180' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
@@ -208,7 +214,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
           )}
         </div>
 
-        <div className="mt-4 lg:mt-8 lg:grid lg:grid-cols-4 lg:items-start lg:gap-8">
+        <div className="mt-4 lg:mt-8 lg:grid lg:grid-cols-4 lg:gap-8">
           <div className="hidden lg:block">
             <FilterSort
               sortBy={sortBy}
