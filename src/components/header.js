@@ -161,7 +161,6 @@ const Header = ({ cartItems, setCartItems }) => {
               {!isLoggedIn ? (
                 <div className="flex gap-2">
                   <Link to="/login/student" className="rounded-md bg-green-800 px-3 py-2 text-sm font-medium text-white shadow transition-transform hover:scale-105">Login</Link>
-                  <Link to="/register/student" className="rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-teal-600 transition-transform hover:scale-105">Register</Link>
                 </div>
               ) : (
                 <div className="relative flex items-center gap-4">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from './api';
 import ProductDetails from './ProductDetails';
@@ -21,6 +22,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     const [insufficientStock, setInsufficientStock] = useState(false);
 
     const auth = getAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -88,6 +90,12 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     }, [activeTab, product._id]);
 
     const handleAddToCart = () => {
+        if (!userId) {
+            toast.error('Please log in to add items to your cart.');
+            navigate('/login/student');
+            return;
+        }
+
         if (product.stock < quantity || product.stock === 0) {
             setInsufficientStock(true);
             toast.error('Insufficient stock to add to cart.');
