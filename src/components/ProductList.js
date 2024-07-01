@@ -1,9 +1,15 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const ProductList = ({ filteredProducts, openModal }) => (
   <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {filteredProducts.map(product => (
-      <li key={product._id}>
+      <motion.li
+        key={product._id}
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <a href="#" className="group block overflow-hidden" onClick={() => openModal(product)}>
           <img
             src={product.productPhotos[0]}
@@ -18,7 +24,7 @@ const ProductList = ({ filteredProducts, openModal }) => (
             </p>
           </div>
         </a>
-      </li>
+      </motion.li>
     ))}
   </ul>
 );
