@@ -183,7 +183,7 @@ export const handleTamCreditsPayment = async (currentUser, cartItems) => {
 
 // Method to handle payment using card
 export const handleCardPayment = async (userData, cardDetails, cartItems, totalPrice) => {
-  const PAYMONGO_SECRET_KEY = sk_test_J9Anuc3zmEY3XAUJFRigaTmv;
+  const PAYMONGO_SECRET_KEY = process.env.REACT_APP_PAYMONGO_SECRET_KEY;
   try {
     const paymentMethodResponse = await axios.post('https://api.paymongo.com/v1/payment_methods', {
       data: {
