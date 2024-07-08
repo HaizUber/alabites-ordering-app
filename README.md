@@ -1,6 +1,6 @@
 # Alabites Food Ordering App
 
-Alabites is an innovative online food ordering system designed to streamline the dining experience for students and patrons of FEU Alabang. The system targets the food concessionaires R2K, CIA, and Graciously and offers a user-friendly web and mobile application that allows customers to order food online and reserve their desired meals.
+Alabites is an innovative online food ordering system designed to streamline the dining experience for students and patrons of FEU Alabang. The system targets the food concessionaires of FEUA (Far Eastern University Alabang) and offers a user-friendly web and mobile application that allows customers to order food online and reserve their desired meals. It is hosted on Vercel for easy deployment and scalability.
 
 ## Technologies Used
 
