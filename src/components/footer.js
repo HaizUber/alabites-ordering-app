@@ -25,8 +25,9 @@ const Footer = () => {
                         <Link to="/help-center" className="text-gray-700 transition hover:text-teal-600">Help Center</Link>
                     </li>
                     <li>
-                        <Link to="/admin" className="text-gray-700 transition hover:text-teal-600">Admin</Link>
-                    </li>
+    <a href="https://alabites-admin-platform.vercel.app/" className="text-gray-700 transition hover:text-teal-600">Admin</a>
+</li>
+
                 </ul>
 
                 <ul className="mt-12 flex justify-center gap-6 md:gap-8">
