@@ -86,7 +86,7 @@ const HelpCenter = () => {
         >
           <h2 className="text-3xl font-bold mb-6">Order Tracking</h2>
           <div className="p-4 bg-gray-50 text-gray-800 rounded-lg shadow-md">
-            <p>To track your order, go to "My Orders" in your account dashboard. You will see the status of your current orders and the expected delivery time.</p>
+            <p>To track your order, go to "Pending Orderss" in your account dashboard. You will see the status of your current orders.</p>
           </div>
         </motion.div>
       </>

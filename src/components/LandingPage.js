@@ -4,7 +4,9 @@ import ProductModal from "../components/ProductModal";
 import CartModal from "../components/CartModal";
 import FilterSort from "../components/FilterSort";
 import ProductList from "../components/ProductList";
+import { useNavigate } from "react-router-dom";
 import '../styles/LandingPage.css';
+
 
 const LandingPage = ({ cartItems, setCartItems }) => {
   const [products, setProducts] = useState([]);
@@ -17,6 +19,8 @@ const LandingPage = ({ cartItems, setCartItems }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const savedCartItems = localStorage.getItem('cartItems');
@@ -164,10 +168,10 @@ const LandingPage = ({ cartItems, setCartItems }) => {
             Ordering your favorite meals has never been faster - only here on Alabites.
           </p>
           <div className="mt-8 flex flex-wrap gap-4 justify-center">
-            <a href="#" className="block w-full rounded bg-green-800 px-8 py-3 text-sm font-medium text-white shadow-lg hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto">
+            <a href="/login/student" className="block w-full rounded bg-green-800 px-8 py-3 text-sm font-medium text-white shadow-lg hover:bg-yellow-500 focus:outline-none focus:ring active:bg-rose-500 sm:w-auto">
               Get Started
             </a>
-            <a href="#" className="block w-full rounded bg-white px-8 py-3 text-sm font-medium text-green-800 shadow-lg hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto mt-4 sm:mt-0">
+            <a href="/help-center" className="block w-full rounded bg-white px-8 py-3 text-sm font-medium text-green-800 shadow-lg hover:text-yellow-500 focus:outline-none focus:ring active:text-rose-500 sm:w-auto mt-4 sm:mt-0">
               Learn More
             </a>
           </div>
