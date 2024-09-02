@@ -45,6 +45,11 @@ const PaymentForm = ({ paymentMethod, setPaymentMethod, handlePayment, isLoading
     setPaymentMethod('tamcredits');
   };
 
+    // Function to handle payment with Pay at Counter
+    const handlePayAtCounterPayment = () => {
+      setPaymentMethod('payatcounter');
+    };
+
   // Function to validate the form fields
   const validateForm = () => {
     let valid = true;
@@ -119,6 +124,12 @@ const PaymentForm = ({ paymentMethod, setPaymentMethod, handlePayment, isLoading
             <label className="flex items-center cursor-pointer">
               <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="paymentMethod" checked={paymentMethod === 'tamcredits'} onChange={handleTamCreditsPayment} />
               <span className="ml-2 text-gray-700">Pay with TamCredits</span>
+            </label>
+          </div>
+          <div className="mb-5">
+            <label className="flex items-center cursor-pointer">
+              <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="paymentMethod" checked={paymentMethod === 'payatcounter'} onChange={handlePayAtCounterPayment} />
+              <span className="ml-2 text-gray-700">Pay at Counter</span>
             </label>
           </div>
           {paymentMethod === 'card' && (

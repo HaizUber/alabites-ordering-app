@@ -52,7 +52,7 @@ const TransactionHistory = ({ transactions = [] }) => {
   const totalPages = Math.ceil(Object.keys(groupedTransactions).length / transactionsPerPage);
 
   const getTransactionClass = (transaction) => {
-    if (transaction.type === 'card' || (transaction.type === 'tamcredits' && transaction.description.toLowerCase().includes('purchase'))) {
+    if (transaction.type === 'card' || transaction.type === 'payatcounter' || (transaction.type === 'tamcredits' && transaction.description.toLowerCase().includes('purchase'))) {
       return 'text-red-500';
     } else if (transaction.type === 'tamcredits' && transaction.description.toLowerCase().includes('adding credits')) {
       return 'text-green-500';
@@ -62,7 +62,7 @@ const TransactionHistory = ({ transactions = [] }) => {
 
   const getTransactionAmount = (transaction) => {
     const amount = Math.abs(transaction.amount);
-    if (transaction.type === 'card') {
+    if (transaction.type === 'card' || transaction.type === 'payatcounter') {
       return `-PHP${amount}`;
     } else if (transaction.type === 'tamcredits' && transaction.description.toLowerCase().includes('purchase')) {
       return `-TC${amount}`;

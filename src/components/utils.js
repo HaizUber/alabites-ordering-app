@@ -50,6 +50,9 @@ export const addTransactionToUser = async (userId, amount, orderId, cartItems, p
   } else if (paymentMethod === 'card') {
     transactionType = 'card';
     transactionDescription = `Purchase with Card: ${cartItems.map(item => item.name).join(', ')}`;
+  } else if (paymentMethod === 'payatcounter') {
+    transactionType = 'payatcounter';
+    transactionDescription = `Purchase with Cash: ${cartItems.map(item => item.name).join(', ')}`;
   } else {
     throw new Error('Unsupported payment method');
   }
@@ -115,6 +118,70 @@ export const updateProductStock = async (cartItems) => {
     await Promise.all(updatePromises);
   } catch (error) {
     console.error('Error updating product stock:', error.message);
+    throw error;
+  }
+};
+
+// Method to handle Pay at Counter payment
+export const handlePayAtCounterPayment = async (currentUser, cartItems, totalPrice) => {
+  try {
+    if (!currentUser) {
+      throw new Error('Current user details not available');
+    }
+
+    // Check and update product stock
+    await updateProductStock(cartItems);
+
+    // Create order
+    const validOrderItems = await Promise.all(cartItems.map(async (item) => {
+      try {
+        if (!item.pid) {
+          throw new Error(`Product ID missing for item: ${JSON.stringify(item)}`);
+        }
+
+        const productResponse = await axios.get(`https://alabites-api.vercel.app/products/query/${item.pid}`);
+        const product = productResponse.data.data[0];
+        return {
+          productId: product._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          store: product.store,
+        };
+      } catch (error) {
+        console.error('Error fetching product details:', error.message);
+        throw error;
+      }
+    }));
+
+    const orderPayload = {
+      orderNumber: generateOrderId(),
+      customer: {
+        name: `${currentUser.firstName} ${currentUser.lastName}`,
+        email: currentUser.email,
+      },
+      items: validOrderItems,
+      paymentDetails: {
+        method: 'payatcounter', // Set payment method to Pay at Counter
+        transactionId: generateOrderId(), // Generate a unique transaction ID
+        amount: totalPrice, // Use totalPrice for the order amount
+      },
+      totalAmount: totalPrice, // Ensure the total amount is also totalPrice
+      orderStatus: 'Pending',
+      store: validOrderItems[0].store,
+    };
+
+    const orderResponse = await axios.post('https://alabites-api.vercel.app/orders', orderPayload, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log("Order response:", orderResponse.data);
+
+    return true; // Indicate success
+  } catch (error) {
+    console.error('Error handling Pay at Counter payment:', error.message);
     throw error;
   }
 };

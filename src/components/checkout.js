@@ -8,7 +8,7 @@ import PaymentForm from './PaymentForm';
 import OrderSummary from './OrderSummary';
 import OrderSuccessModal from './OrderSuccessModal';
 import LoadingModal from './CheckoutModal';
-import { handleTamCreditsPayment, updateUserTamCreditsBalance, handleCardPayment, generateOrderId, addTransactionToUser, checkProductStock } from './utils'; // Ensure correct imports
+import { handleTamCreditsPayment, updateUserTamCreditsBalance, handleCardPayment, handlePayAtCounterPayment, generateOrderId, addTransactionToUser, checkProductStock } from './utils'; // Ensure correct imports
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const CheckoutPage = ({ clearCart }) => {
@@ -110,6 +110,10 @@ const CheckoutPage = ({ clearCart }) => {
         setLoadingMessage('Processing TamCredits payment...');
         await handleTamCreditsPayment(userData, cartItems);
         await addTransactionToUser(userData.uid, totalPrice, orderId, cartItems, 'tamcredits');
+      } else if (paymentMethod === 'payatcounter') {
+        setLoadingMessage('Processing Pay at Counter payment...');
+        await handlePayAtCounterPayment(userData, cartItems, totalPrice);
+        await addTransactionToUser(userData.uid, totalPrice, orderId, cartItems, 'payatcounter');
       } else {
         setLoadingMessage('Processing card payment...');
         paymentIntentResponse = await handleCardPayment(userData, cardDetails, cartItems, totalPrice);
