@@ -1,56 +1,76 @@
-# Alabites Food Ordering App
+# Alabites Ordering App
 
-Alabites is an innovative online food ordering system designed to streamline the dining experience for students and patrons of FEU Alabang. The system targets the food concessionaires R2K, CIA, and Graciously and offers a user-friendly web and mobile application that allows customers to order food online and reserve their desired meals.
+Welcome to the Alabites Ordering App, a platform designed for convenient food ordering within the FEU Alabang campus community.
 
-## Technologies Used
+## Overview
 
-Alabites is built using modern frameworks and technologies:
+The **Alabites Ordering App** provides an intuitive user interface for browsing menus, placing orders, and managing user accounts. It is built using React for frontend development, integrated with Firebase for authentication and real-time database updates. The app features responsive design to ensure a seamless experience across various devices, with animations powered by Framer Motion.
 
-- **Frontend**: 
-  - [React.js](https://reactjs.org/) - JavaScript library for building user interfaces.
-  - [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework for rapid UI development.
-  - [Wireframe](https://wireframe.cc/) - Tool for user interface design.
+## Features
 
-- **Backend**:
-  - [Alabites API](https://alabitesapi.com/) - Custom API developed specifically for Alabites.
-  - [MongoDB](https://www.mongodb.com/) - NoSQL database used for user authentication and storing product details.
+- **User Authentication:** Secure login and registration using Firebase Authentication.
+- **Menu Browsing:** Browse food menus categorized by meal types.
+- **Order Placement:** Easy order placement with real-time updates.
+- **Order Tracking:** Track order status and history.
+- **User Profile:** Manage user profile information and order preferences.
 
-## Getting Started
+## Tech Stack
 
-To get a local copy of the project up and running, follow these steps:
+- **Frontend:** React
+- **UI Framework:** Tailwind CSS
+- **Animation:** Framer Motion
+- **Backend Services:** Firebase (Authentication, Firestore)
+- **Deployment:** Hosted on Vercel
 
-1. Clone this repository: `git clone https://github.com/your-username/alabites.git`
-2. Install dependencies: `npm install`
-3. Start the development server: `npm start`
-4. Open your browser and navigate to `http://localhost:3000`
+## Installation
 
-## Features [UPCOMING!!]
+To run the Alabites Ordering App locally, follow these steps:
 
-- **User Authentication**: Allow users to create accounts and log in securely.
-- **Browse Menus**: View menus from participating food concessionaires.
-- **Place Orders**: Easily add items to the cart and place orders.
-- **Real-Time Updates**: Receive updates on order status in real-time.
-- **Admin Dashboard**: 
-  - Track orders and monitor their status.
-  - Manage inventory: Add or remove food items available for order.
-  - Close a respective store for maintenance or other purposes.
-- **Responsive Design**: Seamlessly access the app from desktop or mobile devices.
+1. Clone the repository: `git clone https://github.com/your-username/alabites-ordering-app.git`
+2. Navigate to the project directory: `cd alabites-ordering-app`
+3. Install dependencies: `npm install`
+4. Start the development server: `npm start`
+5. Open your browser and visit: `http://localhost:3000`
 
-## Contributing
+## Usage
 
-Contributions are welcome! Please follow these steps to contribute to the project:
+### Navigation
 
-1. Fork the repository.
-2. Create a new branch for your feature: `git checkout -b feature-name`
-3. Commit your changes: `git commit -m "Add new feature"`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request.
+Upon launching the Alabites Ordering App, users are greeted with a clean and intuitive interface. The navigation menu is accessible from the top of the screen, providing easy access to different sections of the app.
+
+### Browsing Menus
+
+Users can browse through menus and can be filtered by a variety of ways. Each menu item displays details like price, description, and availability.
+
+### Placing Orders
+
+To place an order, users can:
+
+1. Browse the desired menu category.
+2. Select items by adding them to their cart.
+3. Proceed to checkout where they can review their order details.
+4. Confirm the order to finalize the purchase.
+
+
+### Managing Profiles
+
+Users can manage their profiles by:
+
+- Updating personal information
+- Viewing order history to track previous purchases.
+
+### Additional Features
+
+- **Search Functionality:** Users can search for specific items or restaurants.
+- **Favorites:** Save favorite items for quick reordering. (SOON)
+- **Payment Integration:** Secure payment options for seamless transactions.
+
+The Alabites Ordering App aims to provide a smooth and efficient experience for users, whether they are ordering breakfast before class or dinner after a long day.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](https://mit-license.org/) - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgements
+## Contact
 
-Special thanks to the developers who contributed to this project and to FEU Alabang for their support.
-
+For any inquiries, please contact [HaizUber](mailto:gabzmejia117@gmail.com).
