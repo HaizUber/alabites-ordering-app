@@ -19,6 +19,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasDiscount, setHasDiscount] = useState(false);
   
   const navigate = useNavigate();
 
@@ -69,7 +70,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
 
   useEffect(() => {
     applyFilters();
-  }, [products, sortBy, priceRange, availability, searchQuery]);
+  }, [products, sortBy, priceRange, availability, searchQuery, hasDiscount]);
 
   const applyFilters = () => {
     let filteredProducts = [...products];
@@ -85,6 +86,10 @@ const LandingPage = ({ cartItems, setCartItems }) => {
       const maxPrice = parseFloat(priceRange.maxPrice);
       return (!minPrice || product.price >= minPrice) && (!maxPrice || product.price <= maxPrice);
     });
+
+    if (hasDiscount) {
+      filteredProducts = filteredProducts.filter(product => product.discount > 0);
+    }
 
     if (sortBy === "name, ASC") {
       filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
@@ -125,6 +130,10 @@ const LandingPage = ({ cartItems, setCartItems }) => {
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
+  };
+
+  const handleDiscountChange = (event) => {
+    setHasDiscount(event.target.checked);
   };
 
   const toggleFilters = () => {
@@ -214,6 +223,8 @@ const LandingPage = ({ cartItems, setCartItems }) => {
               handleAvailabilityChange={handleAvailabilityChange}
               searchQuery={searchQuery}
               handleSearchChange={handleSearchChange}
+              hasDiscount={hasDiscount}
+  handleDiscountChange={handleDiscountChange}
             />
           )}
         </div>
@@ -229,6 +240,8 @@ const LandingPage = ({ cartItems, setCartItems }) => {
               handleAvailabilityChange={handleAvailabilityChange}
               searchQuery={searchQuery}
               handleSearchChange={handleSearchChange}
+              hasDiscount={hasDiscount}
+  handleDiscountChange={handleDiscountChange}
             />
           </div>
 

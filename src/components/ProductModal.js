@@ -20,6 +20,8 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     const [productPhotos, setProductPhotos] = useState(product.productPhotos);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
     const [insufficientStock, setInsufficientStock] = useState(false);
+    const [storeName, setStoreName] = useState(''); // State to store the store name
+    const [storePicture, setStorePicture] = useState(''); // State to store the store picture
 
     const auth = getAuth();
     const navigate = useNavigate();
@@ -35,6 +37,86 @@ const ProductModal = ({ product, onClose, addToCart }) => {
 
         return () => unsubscribe();
     }, [auth]);
+
+    useEffect(() => {
+        const fetchStoreDetails = async () => {
+            const storeUrl = `https://alabites-api.vercel.app/store/${product.store}`;
+            
+            console.log('Requesting store details from URL:', storeUrl); // Log the full URL being used
+            
+            try {
+                const response = await axios.get(storeUrl);
+                
+                console.log('API Response:', response); // Log the full response object
+                
+                // Log the entire response data
+                console.log('Full Response Data:', response.data);
+                
+                // Check the structure of the response data
+                console.log('Keys in Response Data:', Object.keys(response.data));
+                
+                // Extract store details from the nested data
+                const { storeName, storepicture } = response.data.data;
+                
+                // Log the store details before setting them in the state
+                console.log('Store Name:', storeName);
+                console.log('Store Picture:', storepicture);
+                
+                // Set the store details in the state
+                setStoreName(storeName);
+                setStorePicture(storepicture);
+                
+            } catch (error) {
+                console.error('Error fetching store details:', error);
+                toast.error('Failed to fetch store details. Please try again later.');
+            }
+        };
+    
+        if (product.store) {
+            fetchStoreDetails();
+        }
+    }, [product.store]);
+    useEffect(() => {
+        const fetchStoreDetails = async () => {
+            const storeUrl = `https://alabites-api.vercel.app/store/${product.store}`;
+            
+            console.log('Requesting store details from URL:', storeUrl); // Log the full URL being used
+            
+            try {
+                const response = await axios.get(storeUrl);
+                
+                console.log('API Response:', response); // Log the full response object
+                
+                // Log the entire response data
+                console.log('Full Response Data:', response.data);
+                
+                // Check the structure of the response data
+                console.log('Keys in Response Data:', Object.keys(response.data));
+                
+                // Extract store details from the nested data
+                const { storeName, storepicture } = response.data.data;
+                
+                // Log the store details before setting them in the state
+                console.log('Store Name:', storeName);
+                console.log('Store Picture:', storepicture);
+                
+                // Set the store details in the state
+                setStoreName(storeName);
+                setStorePicture(storepicture);
+                
+            } catch (error) {
+                console.error('Error fetching store details:', error);
+                toast.error('Failed to fetch store details. Please try again later.');
+            }
+        };
+    
+        if (product.store) {
+            fetchStoreDetails();
+        }
+    }, [product.store]);
+        
+    
+    
 
     const fetchUserId = async (user) => {
         try {
@@ -141,7 +223,15 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                     <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div className="sm:flex sm:items-start">
                             <div className="lg:w-1/2 w-full lg:pr-10 lg:py-6 mb-6 lg:mb-0 transition-transform duration-500">
-                                <h2 className="text-sm title-font text-gray-500 tracking-widest">{product.store}</h2>
+                            <h2 className="flex items-center space-x-2 text-sm title-font text-gray-500 tracking-widest">
+  <img
+    src={storePicture}
+    alt={storeName}
+    className="w-8 h-8 rounded-full object-cover"
+  />
+  <span>{storeName}</span>
+</h2>
+
                                 <h1 className="text-gray-900 text-3xl title-font font-medium mb-4">{product.name}</h1>
                                 <div className="flex mb-4">
                                     <a

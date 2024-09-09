@@ -8,7 +8,9 @@ const FilterSort = ({
   availability, 
   handleAvailabilityChange, 
   searchQuery, 
-  handleSearchChange 
+  handleSearchChange,
+  hasDiscount, 
+  handleDiscountChange 
 }) => (
   <div className="space-y-4">
     <input 
@@ -61,6 +63,18 @@ const FilterSort = ({
         <option value="In Stock">In Stock</option>
         <option value="Out of Stock">Out of Stock</option>
       </select>
+    </div>
+
+    <div>
+    <label className="inline-flex items-center">
+  <input 
+    type="checkbox" 
+    checked={hasDiscount} 
+    onChange={handleDiscountChange} 
+    className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" 
+  />
+  <span className="ml-2 text-sm text-gray-700">Discounted Products Only</span>
+</label>
     </div>
   </div>
 );
