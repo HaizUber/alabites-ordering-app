@@ -22,6 +22,7 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     const [insufficientStock, setInsufficientStock] = useState(false);
     const [storeName, setStoreName] = useState(''); // State to store the store name
     const [storePicture, setStorePicture] = useState(''); // State to store the store picture
+    const [gcashNumber, setStoreGCASHnumber] = useState(''); // State to store the store gcash number
 
     const auth = getAuth();
     const navigate = useNavigate();
@@ -56,15 +57,17 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                 console.log('Keys in Response Data:', Object.keys(response.data));
                 
                 // Extract store details from the nested data
-                const { storeName, storepicture } = response.data.data;
+                const { storeName, storePicture, gcashNumber } = response.data.data;
                 
                 // Log the store details before setting them in the state
                 console.log('Store Name:', storeName);
-                console.log('Store Picture:', storepicture);
+                console.log('Store Picture:', storePicture);
+                console.log('Store Gcash:', gcashNumber);
                 
                 // Set the store details in the state
                 setStoreName(storeName);
-                setStorePicture(storepicture);
+                setStorePicture(storePicture);
+                setStoreGCASHnumber(gcashNumber);
                 
             } catch (error) {
                 console.error('Error fetching store details:', error);
@@ -257,6 +260,8 @@ const ProductModal = ({ product, onClose, addToCart }) => {
                                         incrementQuantity={incrementQuantity}
                                         setQuantity={setQuantity}
                                         handleAddToCart={handleAddToCart}
+                                        gcashNumber={gcashNumber}
+                                        storeName={storeName}
                                     />
                                 )}
                                 {activeTab === 'reviews' && (

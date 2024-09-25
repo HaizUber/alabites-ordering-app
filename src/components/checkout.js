@@ -54,7 +54,7 @@ const CheckoutPage = ({ clearCart }) => {
       console.log('Unsubscribed from auth state changes');
     };
   }, [auth]);
-
+  
   const fetchUserDetails = async (email) => {
     console.log(`Fetching user details for email: ${email}`);
 
@@ -111,7 +111,7 @@ const CheckoutPage = ({ clearCart }) => {
         await handleTamCreditsPayment(userData, cartItems);
         await addTransactionToUser(userData.uid, totalPrice, orderId, cartItems, 'tamcredits');
       } else if (paymentMethod === 'payatcounter') {
-        setLoadingMessage('Processing Pay at Counter payment...');
+        setLoadingMessage('Processing Order ID for Pay at Counter payment...');
         await handlePayAtCounterPayment(userData, cartItems, totalPrice);
         await addTransactionToUser(userData.uid, totalPrice, orderId, cartItems, 'payatcounter');
       } else {

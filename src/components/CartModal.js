@@ -53,9 +53,9 @@ const CartItem = ({ item, index, updateCartItemQuantity, removeItemFromCart }) =
   </li>
 );
 
-const CartModal = ({ cartItems, setCartItems, removeItemFromCart, onClose }) => {
+const CartModal = ({ cartItems, product, setCartItems, removeItemFromCart, onClose }) => {
   const navigate = useNavigate();
-
+  
   const subtotal = useMemo(
     () => cartItems.reduce((total, item) => total + item.quantity * item.price, 0),
     [cartItems]

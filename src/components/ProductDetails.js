@@ -8,7 +8,9 @@ const ProductDetails = ({
     decrementQuantity,
     incrementQuantity,
     setQuantity,
-    handleAddToCart
+    handleAddToCart,
+    gcashNumber,
+    storeName,
 }) => {
     const inputSpring = useSpring({
         to: { opacity: 1, transform: 'translateY(0)' },
@@ -94,13 +96,14 @@ const ProductDetails = ({
         <>
             <span className="text-gray-600 line-through mr-2">PHP {product.price.toFixed(2)}</span>
             <span className="title-font font-medium text-2xl text-gray-900">
-                PHP {(product.price * (1 - product.discount / 100)).toFixed(2)}
+                PHP {(product.price * (1 - product.discount / 100)).toFixed(2)} 
             </span>
         </>
     ) : (
         <span className="title-font font-medium text-2xl text-gray-900">
             PHP {product.price.toFixed(2)}
         </span>
+        
     )}
     <motion.button
         whileHover={{ scale: 1.05 }}
@@ -110,6 +113,13 @@ const ProductDetails = ({
     >
         Add to Cart
     </motion.button>
+</div>
+{/* Disclaimer text */}
+<p className="mt-4 text-red-500 font-semibold">
+    Note: If you wish to pay with GCash, please select the "Pay at Counter" payment option. Then Present your proof of payment to the respective store owner.
+</p>
+<div className="mt-2 p-2 border border-red-500 rounded bg-red-100">
+    {storeName}'s GCash Number: <span className="font-bold text-red-700">{gcashNumber}</span>
 </div>
 
         </motion.div>
