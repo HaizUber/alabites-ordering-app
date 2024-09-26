@@ -4,6 +4,7 @@ import ProductModal from "../components/ProductModal";
 import CartModal from "../components/CartModal";
 import FilterSort from "../components/FilterSort";
 import ProductList from "../components/ProductList";
+import OrderInstructionsModal from "../components/OrderInstructionsModal";
 import { useNavigate } from "react-router-dom";
 import '../styles/LandingPage.css';
 
@@ -20,6 +21,7 @@ const LandingPage = ({ cartItems, setCartItems }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasDiscount, setHasDiscount] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
   
   const navigate = useNavigate();
 
@@ -114,6 +116,10 @@ const LandingPage = ({ cartItems, setCartItems }) => {
     }
 
     setFilteredProducts(filteredProducts);
+  };
+
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
   };
 
   const handleSortChange = (event) => {
@@ -255,6 +261,22 @@ const LandingPage = ({ cartItems, setCartItems }) => {
         </div>
       </div>
       <Footer />
+{/* Floating Button */}
+<button
+  onClick={toggleModal}
+  className="fixed bottom-10 right-10 bg-green-800 rounded-full p-6 shadow-lg hover:bg-green-700 transition" // Increased padding
+  style={{ zIndex: 1000 }} // Ensure it is above other elements
+>
+  <img
+    src="/assets/AlabitesIcon3.png"
+    alt="Order Instructions"
+    className="w-12 h-10 transform scale-125" // Adjusted image size if needed
+  />
+</button>
+
+
+      {/* Order Instructions Modal */}
+      <OrderInstructionsModal isOpen={isModalOpen} onClose={toggleModal} />
     </section>
   );
 };

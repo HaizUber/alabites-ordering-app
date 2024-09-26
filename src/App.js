@@ -55,13 +55,19 @@ const App = () => {
             path="/"
             element={<LandingPage cartItems={cartItems} setCartItems={setCartItems} removeItemFromCart={removeItemFromCart} />} // Pass removeItemFromCart as a prop
           />
+
           <Route path="/login/student" element={<StudentLoginPage />} />
           {/* Add routes for register pages */}
           <Route path="/register/student" element={<StudentRegisterPage />} />
-          <Route
-            path="/checkout"
-            element={<CheckoutPage clearCart={clearCart}/>} // Pass clearCart and navigate as props
-          />
+          <Route 
+  path="/checkout" 
+  element={<CheckoutPage 
+              cartItems={cartItems} 
+              setCartItems={setCartItems} 
+              clearCart={clearCart} 
+            />} 
+/>
+
           <Route path="/topup" element={<TopupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/help-center" element={<HelpCenter />} />

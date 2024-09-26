@@ -1,9 +1,8 @@
-// OrderSummary.js
 import React from 'react';
 import { useSpring, animated } from 'react-spring'; // Import react-spring hooks
 import '../styles/OrderSummary.css'; // Import CSS for animations
 
-const OrderSummary = ({ cartItems, subtotal, totalDiscount, totalPrice }) => {
+const OrderSummary = ({ cartItems = [], subtotal = 0, totalDiscount = 0, totalPrice = 0 }) => {
   // Animation for total price
   const totalSpring = useSpring({
     from: { value: 0 },
@@ -17,20 +16,24 @@ const OrderSummary = ({ cartItems, subtotal, totalDiscount, totalPrice }) => {
         {/* Cart Items */}
         <div className="mb-6 pb-6 border-b border-gray-200">
           <label className="text-gray-600 font-semibold text-sm mb-2 ml-1">Cart Items</label>
-          {cartItems.map((item, index) => (
-            <div key={index} className="flex items-center mb-4 cart-item">
-              <div className="overflow-hidden rounded-lg w-16 h-16 bg-gray-50 border border-gray-200">
-                <img src={item.photo} alt={item.name} className="w-full h-full object-cover" />
+          {cartItems.length === 0 ? (
+            <p className="text-gray-500">Your cart is empty.</p> // Message when cart is empty
+          ) : (
+            cartItems.map((item, index) => (
+              <div key={index} className="flex items-center mb-4 cart-item">
+                <div className="overflow-hidden rounded-lg w-16 h-16 bg-gray-50 border border-gray-200">
+                  <img src={item.photo} alt={item.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-grow pl-3">
+                  <h6 className="font-semibold text-gray-600">{item.name}</h6>
+                  <p className="text-gray-400">x {item.quantity}</p>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-600">PHP {item.price.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex-grow pl-3">
-                <h6 className="font-semibold text-gray-600">{item.name}</h6>
-                <p className="text-gray-400">x {item.quantity}</p>
-              </div>
-              <div>
-                <span className="font-semibold text-gray-600">PHP {item.price.toFixed(2)}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Subtotal */}
@@ -63,6 +66,13 @@ const OrderSummary = ({ cartItems, subtotal, totalDiscount, totalPrice }) => {
               {totalSpring.value.interpolate((val) => `PHP ${val.toFixed(2)}`)}
             </animated.span>
           </div>
+        </div>
+
+        {/* GCash Payment Note */}
+        <div className="mt-4 p-3 border border-gray-200 rounded bg-gray-50">
+          <p className="text-gray-700 text-sm">
+            If you wish to pay with GCash, please pay the indicated GCash number for each menu item beforehand and select the "Pay at Counter" payment option. Present your proof of payment to the store owner upon claiming your order.
+          </p>
         </div>
       </div>
     </div>

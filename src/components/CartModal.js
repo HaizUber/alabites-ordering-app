@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { useSpring, animated } from 'react-spring';
 
-const CartItem = ({ item, index, updateCartItemQuantity, removeItemFromCart }) => (
+const CartItem = ({ item, index, updateCartItemQuantity, removeItemFromCart, isSelected, selectItem }) => (
   <li className="flex items-center gap-4">
     <img src={item.photo} alt={item.name} className="w-16 h-16 rounded object-cover" />
     <div>
@@ -49,26 +49,25 @@ const CartItem = ({ item, index, updateCartItemQuantity, removeItemFromCart }) =
           />
         </svg>
       </button>
+      <input
+        type="radio"
+        name="checkout-item"
+        checked={isSelected}
+        onChange={() => selectItem(index)}
+        aria-label={`Select ${item.name} for checkout`}
+      />
     </div>
   </li>
 );
 
-const CartModal = ({ cartItems, product, setCartItems, removeItemFromCart, onClose }) => {
+const CartModal = ({ cartItems, setCartItems, removeItemFromCart, onClose }) => {
   const navigate = useNavigate();
-  
-  const subtotal = useMemo(
-    () => cartItems.reduce((total, item) => total + item.quantity * item.price, 0),
-    [cartItems]
-  );
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null); // State to track selected item
 
-  const totalDiscount = useMemo(
-    () => cartItems.reduce(
-      (total, item) => total + ((item.discount / 100) * item.quantity * item.price),
-      0
-    ),
-    [cartItems]
-  );
-
+  // Calculate subtotal, discount, and total for the selected item
+  const selectedItem = cartItems[selectedItemIndex];
+  const subtotal = useMemo(() => (selectedItem ? selectedItem.quantity * selectedItem.price : 0), [selectedItem]);
+  const totalDiscount = useMemo(() => (selectedItem ? (selectedItem.discount / 100) * subtotal : 0), [selectedItem, subtotal]);
   const totalPrice = useMemo(() => subtotal - totalDiscount, [subtotal, totalDiscount]);
 
   const updateCartItemQuantity = (index, newQuantity) => {
@@ -78,10 +77,15 @@ const CartModal = ({ cartItems, product, setCartItems, removeItemFromCart, onClo
   };
 
   const handleProceedToCheckout = () => {
-    navigate('/checkout', {
-      state: { cartItems, subtotal, totalDiscount, totalPrice }
-    });
-    onClose(); // Close the modal after navigating
+    if (selectedItemIndex !== null) {
+      const selectedItems = [cartItems[selectedItemIndex]]; // Only include the selected item
+      navigate('/checkout', {
+        state: { selectedItems, subtotal, totalDiscount, totalPrice }
+      });
+      onClose(); // Close the modal after navigating
+    } else {
+      toast.error("Please select an item to checkout.");
+    }
   };
 
   // Animation for total price
@@ -117,6 +121,8 @@ const CartModal = ({ cartItems, product, setCartItems, removeItemFromCart, onClo
                   index={index}
                   updateCartItemQuantity={updateCartItemQuantity}
                   removeItemFromCart={removeItemFromCart}
+                  isSelected={selectedItemIndex === index}
+                  selectItem={setSelectedItemIndex}
                 />
               ))}
             </ul>

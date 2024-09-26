@@ -48,14 +48,6 @@ const ProductModal = ({ product, onClose, addToCart }) => {
             try {
                 const response = await axios.get(storeUrl);
                 
-                console.log('API Response:', response); // Log the full response object
-                
-                // Log the entire response data
-                console.log('Full Response Data:', response.data);
-                
-                // Check the structure of the response data
-                console.log('Keys in Response Data:', Object.keys(response.data));
-                
                 // Extract store details from the nested data
                 const { storeName, storePicture, gcashNumber } = response.data.data;
                 
@@ -82,44 +74,27 @@ const ProductModal = ({ product, onClose, addToCart }) => {
     useEffect(() => {
         const fetchStoreDetails = async () => {
             const storeUrl = `https://alabites-api.vercel.app/store/${product.store}`;
-            
-            console.log('Requesting store details from URL:', storeUrl); // Log the full URL being used
-            
+            console.log('Requesting store details from URL:', storeUrl);
+
             try {
                 const response = await axios.get(storeUrl);
-                
-                console.log('API Response:', response); // Log the full response object
-                
-                // Log the entire response data
-                console.log('Full Response Data:', response.data);
-                
-                // Check the structure of the response data
-                console.log('Keys in Response Data:', Object.keys(response.data));
-                
-                // Extract store details from the nested data
-                const { storeName, storepicture } = response.data.data;
-                
-                // Log the store details before setting them in the state
-                console.log('Store Name:', storeName);
-                console.log('Store Picture:', storepicture);
-                
-                // Set the store details in the state
+                const { storeName, storePicture, gcashNumber } = response.data.data;
+
+                console.log('Store Details:', { storeName, storePicture, gcashNumber });
+
                 setStoreName(storeName);
-                setStorePicture(storepicture);
-                
+                setStorePicture(storePicture);
+                setStoreGCASHnumber(gcashNumber);
             } catch (error) {
                 console.error('Error fetching store details:', error);
                 toast.error('Failed to fetch store details. Please try again later.');
             }
         };
-    
+
         if (product.store) {
             fetchStoreDetails();
         }
     }, [product.store]);
-        
-    
-    
 
     const fetchUserId = async (user) => {
         try {
